@@ -5,4 +5,4 @@ Recommender System using last.fm dataset
 1. Go to https://www.jetbrains.com/idea/download/#section=windows
 2. Select your Operating System.
 3. Download the "Community Edition" and click to install when complete.
-4. Follow the installation steps from the installer.
+4. Follow the installation steps.
