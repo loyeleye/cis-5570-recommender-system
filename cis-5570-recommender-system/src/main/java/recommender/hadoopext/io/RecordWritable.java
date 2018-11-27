@@ -1,5 +1,7 @@
 package recommender.hadoopext.io;
 
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.math3.exception.NoDataException;
 import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
@@ -22,7 +24,7 @@ public class RecordWritable implements WritableComparable<RecordWritable> {
 
     private ArrayWritable misc;
 
-    public static RecordWritable readUserTaggedArtist(String[] record) {
+    public static RecordWritable readUserTaggedArtist(String[] record) throws IOException {
         RecordWritable r = new RecordWritable();
 
         // Convert string values
@@ -31,9 +33,9 @@ public class RecordWritable implements WritableComparable<RecordWritable> {
         int t = Integer.parseInt(record[2]);
 
         // Set writables
-        r.userId.set(u);
-        r.artistId.set(a);
-        r.tagId.set(t);
+        r.userId = new IntWritable(u);
+        r.artistId = new IntWritable(a);
+        r.tagId = new IntWritable(t);
 
         return r;
     }
@@ -47,9 +49,9 @@ public class RecordWritable implements WritableComparable<RecordWritable> {
         int w = Integer.parseInt(record[2]);
 
         // Set writables
-        r.userId.set(u);
-        r.artistId.set(a);
-        r.weight.set(w);
+        r.userId = new IntWritable(u);
+        r.artistId = new IntWritable(a);
+        r.weight =  new IntWritable(w);
 
         return r;
     }

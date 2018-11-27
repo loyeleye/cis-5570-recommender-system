@@ -16,6 +16,8 @@ public class ProfileIdWritable implements WritableComparable<ProfileIdWritable> 
         this.id = id;
     }
 
+    public ProfileIdWritable() {}
+
     public int compareTo(ProfileIdWritable o) {
         int cmp = isUserProfile.compareTo(o.isUserProfile);
         return (cmp == 0) ? id.compareTo(o.getId()) : cmp;

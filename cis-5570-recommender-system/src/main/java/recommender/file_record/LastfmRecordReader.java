@@ -26,6 +26,7 @@ public class LastfmRecordReader extends RecordReader<Text, RecordWritable> {
 	private long start = 0;
 	private long end = 0;
 	private long pos = 0;
+	private long line = 0;
 	private int record_schema_length = 0;
 
 	@Override
@@ -45,8 +46,9 @@ public class LastfmRecordReader extends RecordReader<Text, RecordWritable> {
 
 		// Read the first line as the record_schema
 		String sch = in.readLine();
-		// Update the position marker
+		// Update the position marker and line #
 		pos += sch.length();
+		line++;
 		// Get the record schema length
 		record_schema_length = StringUtils.split(sch).length;
 	}
@@ -97,8 +99,9 @@ public class LastfmRecordReader extends RecordReader<Text, RecordWritable> {
 		// Return false if no more lines to read
 		if (nextReadLine == null) return false;
 
-		// Update the position marker
+		// Update the position marker and line #
 		pos += nextReadLine.length();
+		line++;
 
 		// Split values to an array
 		String[] nextReadLineValues = StringUtils.split(nextReadLine);
@@ -106,7 +109,7 @@ public class LastfmRecordReader extends RecordReader<Text, RecordWritable> {
 		if (record_schema_length != nextReadLineValues.length) {
 			// Values don't match up to record_schema. Throw IO error
 			throw new IOException(
-					String.format("ERROR: Values do not match up to record_schema in file %s at pos %d", key, pos)
+					String.format("ERROR: Values do not match up to record_schema in file %s at line %d. Schema size: %d, Record size: %d", key, line, record_schema_length, nextReadLineValues.length)
 			);
 		}
 

@@ -1,12 +1,12 @@
 package recommender.enums;
 
 public enum Filenames {
-    A("artists"),
-    T("tags"),
-    UA("user_artists"),
-    UF("user_friends"),
-    UT("user_taggedartists"),
-    UTT("user_taggedartists-timestamps");
+    A("artists.dat"),
+    T("tags.dat"),
+    UA("user_artists.dat"),
+    UF("user_friends.dat"),
+    UT("user_taggedartists.dat"),
+    UTT("user_taggedartists-timestamps.dat");
 
     private final String filename;
 
