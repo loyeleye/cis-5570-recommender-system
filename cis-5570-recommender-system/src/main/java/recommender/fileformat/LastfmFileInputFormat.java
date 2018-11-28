@@ -1,4 +1,4 @@
-package recommender.file_record;
+package recommender.fileformat;
 
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.RecordReader;

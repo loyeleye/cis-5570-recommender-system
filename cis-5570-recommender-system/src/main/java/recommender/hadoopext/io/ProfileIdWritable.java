@@ -44,4 +44,9 @@ public class ProfileIdWritable implements WritableComparable<ProfileIdWritable> 
     public Boolean isArtist() {
         return !isUserProfile;
     }
+
+    @Override
+    public String toString() {
+        return String.format("%s-%d", isUserProfile ? "user" : "artist", id);
+    }
 }

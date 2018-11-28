@@ -58,8 +58,8 @@ public class WordCount {
 
         job.setJarByClass(WordCount.class);
 
-        FileInputFormat.addInputPath( job, new Path("input"));
-        FileOutputFormat.setOutputPath( job, new Path("output"));
+        FileInputFormat.addInputPath( job, new Path("word_input"));
+        FileOutputFormat.setOutputPath( job, new Path("word_output"));
         job.setMapperClass( WordCountMapper.class);
         job.setCombinerClass( WordCountReducer.class);
         job.setReducerClass( WordCountReducer.class);

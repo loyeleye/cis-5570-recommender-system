@@ -1,4 +1,4 @@
-package recommender.file_record;
+package recommender.fileformat;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;

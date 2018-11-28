@@ -10,6 +10,7 @@ import org.apache.hadoop.io.WritableComparable;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.lang.reflect.Field;
 
 public class RecordWritable implements WritableComparable<RecordWritable> {
     private IntWritable userId;
@@ -136,5 +137,26 @@ public class RecordWritable implements WritableComparable<RecordWritable> {
 
     public ArrayWritable getMisc() {
         return misc;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder("[");
+        Object o;
+        for (Field f: RecordWritable.class.getDeclaredFields()) {
+            try {
+                 o = f.get(this);
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+                o = "<error>";
+            }
+            if (o != null) {
+                sb.append(String.format("%s:%s,", f.getName(), o.toString()));
+            }
+        }
+        // remove last comma and add a closing bracket
+        sb.setLength(Math.max(sb.length() - 1, 0));
+        sb.append("]");
+        return sb.toString();
     }
 }

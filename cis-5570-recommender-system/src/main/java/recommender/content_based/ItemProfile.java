@@ -1,6 +1,6 @@
 package recommender.content_based;
 
-import com.google.common.collect.Iterables;
+import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
@@ -11,15 +11,16 @@ import recommender.hadoopext.io.ProfileIdWritable;
 import recommender.hadoopext.io.RecordWritable;
 
 import java.io.IOException;
+import java.util.HashMap;
 
 public class ItemProfile {
     /**
-     * Step 1 Mapper Class
+     * Mapper Class
      * Takes the user_taggedartists file and generates (artist, tag) pairs
      * input: (key: filename, value: record (as RecordWritable))
      * output: (key: artistProfile (as a ProfileIdWritable), value: tagId)
      */
-    public static class ItemProfile1Mapper
+    public static class ItemProfileMapper
             extends Mapper<Text, RecordWritable, ProfileIdWritable, IntWritable> {
         public void map(Text filename, RecordWritable record, Context context) throws IOException, InterruptedException {
 
@@ -33,26 +34,35 @@ public class ItemProfile {
     }
 
     /**
-     * Step 1 Reducer Class
-     * Gets a total count for all tags associated with a particular artist
+     * Reducer Class
+     * Gets a percentage tag score for all tags associated with a particular artist
      * input: (key: artistProfile (as a ProfileIdWritable), value: tagId)
-     * output: (key: (artistProfile,tagId), value: artist-total-tag-count)
+     * output: (key: (artistProfile,tagId), value: artist-tag-score)
      */
-    public static class ItemProfile1Reducer
+    public static class ItemProfileReducer
             extends
-            Reducer< ProfileIdWritable, IntWritable, ProfileAndTagWritable, IntWritable > {
+            Reducer< ProfileIdWritable, IntWritable, ProfileAndTagWritable, DoubleWritable > {
 
-        private IntWritable artistTotalTagCount = new IntWritable();
+        private DoubleWritable artistTagScore = new DoubleWritable();
         private ProfileAndTagWritable profileAndTag = new ProfileAndTagWritable();
 
         public void reduce( ProfileIdWritable key, Iterable < IntWritable > values, Context context
         ) throws IOException,
                 InterruptedException {
+            double totalCount = 0;
+            HashMap<Integer, Integer> tagCounts = new HashMap<>();
+            for (IntWritable tag: values) {
+                int tagId = tag.get();
+                tagCounts.put(tagId, tagCounts.containsKey(tagId) ? tagCounts.get(tagId) + 1 : 1);
+                totalCount+=1;
+            }
+
             profileAndTag.setProfileId(key);
-            artistTotalTagCount.set(Iterables.size(values));
-            for (IntWritable tagId: values) {
-                profileAndTag.setTagId(tagId);
-                context.write(profileAndTag, artistTotalTagCount);
+
+            for (int tagId: tagCounts.keySet()) {
+                profileAndTag.setTagId(new IntWritable(tagId));
+                artistTagScore.set(tagCounts.get(tagId) / totalCount);
+                context.write(profileAndTag, artistTagScore);
             }
         }
     }

@@ -44,4 +44,9 @@ public class ProfileAndTagWritable implements WritableComparable<ProfileAndTagWr
     public void setProfileId(ProfileIdWritable profileId) {
         this.profileId = profileId;
     }
+
+    @Override
+    public String toString() {
+        return String.format("(%s,%s)", profileId.toString(), tagId);
+    }
 }
