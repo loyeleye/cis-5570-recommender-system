@@ -13,7 +13,8 @@ import recommender.hadoopext.io.ProfileIdWritable;
 public class Main {
 
     public static void main( String[] args) throws Exception {
-        // Item Profile Step 1
+        boolean success;
+        // Item Profile
         Configuration conf = new Configuration();
         Job itemProfile = Job.getInstance( conf, "item profile");
         itemProfile.setJarByClass(ItemProfile.class);
@@ -26,8 +27,21 @@ public class Main {
         itemProfile.setMapOutputValueClass(IntWritable.class);
         itemProfile.setOutputKeyClass(ProfileAndTagWritable.class);
         itemProfile.setOutputValueClass(DoubleWritable.class);
-
-        System.exit( itemProfile.waitForCompletion( true) ? 0 : 1);
+        success = itemProfile.waitForCompletion( true);
+        // User Profile
+        Job userProfile = Job.getInstance( conf, "user profile");
+        userProfile.setJarByClass(ItemProfile.class);
+        LastfmFileInputFormat.addInputPath(userProfile, new Path("input"));
+        userProfile.setInputFormatClass(LastfmFileInputFormat.class);
+        FileOutputFormat.setOutputPath(userProfile, new Path("userProfile"));
+        userProfile.setMapperClass(ItemProfile.ItemProfileMapper.class);
+        userProfile.setReducerClass(ItemProfile.ItemProfileReducer.class);
+        userProfile.setMapOutputKeyClass(ProfileIdWritable.class);
+        userProfile.setMapOutputValueClass(IntWritable.class);
+        userProfile.setOutputKeyClass(ProfileAndTagWritable.class);
+        userProfile.setOutputValueClass(DoubleWritable.class);
+        success = userProfile.waitForCompletion( true) && success;
+        System.exit(success ? 0 : 1);
     }
 
 }
