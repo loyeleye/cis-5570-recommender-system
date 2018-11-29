@@ -11,5 +11,5 @@ Recommender System using last.fm dataset
 Run the following command in the same directory as the pom.xml:<br/>
 `mvn clean compile assembly:single`<br/>
 Then run the new jar file:<br/>
-`java -jar target/cis-5570...(just press <tab>).jar`
+`java -jar target/cis-5570...(just press <tab>).jar`<br/>
 [Click here](https://stackoverflow.com/questions/34070599/intellij-maven-create-jar-with-all-library-dependencies) for more details.
