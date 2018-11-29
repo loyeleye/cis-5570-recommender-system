@@ -8,6 +8,7 @@ Recommender System using last.fm dataset
 4. Follow the installation steps.
 
 ## Running project as a Maven Jar file
+(Have to pull the latest changes from master)
 Run the following command in the same directory as the pom.xml:<br/>
 `mvn clean compile assembly:single`<br/>
 Then run the new jar file:<br/>
