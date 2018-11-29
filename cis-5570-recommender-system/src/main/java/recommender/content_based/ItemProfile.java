@@ -13,7 +13,7 @@ import recommender.hadoopext.io.RecordWritable;
 import java.io.IOException;
 import java.util.HashMap;
 
-class ItemProfile {
+public class ItemProfile {
     /**
      * Mapper Class
      * Takes the user_taggedartists file and generates (artist, tag) pairs

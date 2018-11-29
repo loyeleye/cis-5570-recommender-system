@@ -2189,7 +2189,7 @@ id	name	url	pictureURL
 2202	Dead Silence Hides My Cries	http://www.last.fm/music/Dead+Silence+Hides+My+Cries	http://userserve-ak.last.fm/serve/252/45046041.jpg
 2203	Abandon All Ships	http://www.last.fm/music/Abandon+All+Ships	http://userserve-ak.last.fm/serve/252/54420601.png
 2204	Of Mice & Men	http://www.last.fm/music/Of%2BMice%2B%2526%2BMen	http://userserve-ak.last.fm/serve/252/60671359.png
-2205	Main-de-Gloire	http://www.last.fm/music/Main-de-Gloire	http://userserve-ak.last.fm/serve/252/46190313.jpg
+2205	recommender.content_based.Main-de-Gloire	http://www.last.fm/music/recommender.content_based.Main-de-Gloire	http://userserve-ak.last.fm/serve/252/46190313.jpg
 2206	Chevelle	http://www.last.fm/music/Chevelle	http://userserve-ak.last.fm/serve/252/34108699.jpg
 2207	The Mess	http://www.last.fm/music/The+Mess	http://userserve-ak.last.fm/serve/252/48835591.jpg
 2208	Compelled to Comply	http://www.last.fm/music/Compelled+to+Comply	http://userserve-ak.last.fm/serve/252/44178027.jpg
@@ -2905,7 +2905,7 @@ id	name	url	pictureURL
 2923	Lupe Fiasco	http://www.last.fm/music/Lupe+Fiasco	http://userserve-ak.last.fm/serve/252/5655396.jpg
 2924	G-Unit	http://www.last.fm/music/G-Unit	http://userserve-ak.last.fm/serve/252/16055353.jpg
 2925	O.C.	http://www.last.fm/music/O.C.	http://userserve-ak.last.fm/serve/252/192733.jpg
-2926	Main Source	http://www.last.fm/music/Main+Source	http://userserve-ak.last.fm/serve/252/22752305.png
+2926	recommender.content_based.Main Source	http://www.last.fm/music/recommender.content_based.Main+Source	http://userserve-ak.last.fm/serve/252/22752305.png
 2927	Jadakiss	http://www.last.fm/music/Jadakiss	http://userserve-ak.last.fm/serve/252/36519245.png
 2928	Uncle Murda	http://www.last.fm/music/Uncle+Murda	http://userserve-ak.last.fm/serve/252/19188565.jpg
 2929	Eric B. & Rakim	http://www.last.fm/music/Eric%2BB.%2B%2526%2BRakim	http://userserve-ak.last.fm/serve/252/44345959.jpg

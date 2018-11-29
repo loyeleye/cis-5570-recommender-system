@@ -1,7 +1,5 @@
 package recommender.hadoopext.io;
 
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.math3.exception.NoDataException;
 import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
