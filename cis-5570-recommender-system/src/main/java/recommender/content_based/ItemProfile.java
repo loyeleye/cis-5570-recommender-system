@@ -1,5 +1,6 @@
 package recommender.content_based;
 
+import com.amazonaws.util.StringUtils;
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;

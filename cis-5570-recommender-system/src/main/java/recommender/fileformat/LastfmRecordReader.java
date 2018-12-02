@@ -13,6 +13,7 @@ import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import recommender.hadoopext.io.RecordWritable;
 
 import java.io.BufferedReader;
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
@@ -21,6 +22,8 @@ import static recommender.enums.Filenames.UT;
 
 public class LastfmRecordReader extends RecordReader<Text, RecordWritable> {
 	private Text key = new Text();
+
+	private Text parentFolder = new Text();
 	private RecordWritable record = new RecordWritable();
 	private BufferedReader in;
 	private long start = 0;
@@ -39,6 +42,7 @@ public class LastfmRecordReader extends RecordReader<Text, RecordWritable> {
 		pos = start;
 		end = start + fileSplit.getLength();
 		final Path file = fileSplit.getPath();
+		parentFolder.set(file.getParent().getName());
 		FileSystem fs = file.getFileSystem(conf);
 		FSDataInputStream fileIn = fs.open(file);
 		in = new BufferedReader(new InputStreamReader(fileIn));
@@ -115,9 +119,14 @@ public class LastfmRecordReader extends RecordReader<Text, RecordWritable> {
 
 		// Assign read line values to the record writable, depending on file type
 		if (UT.filename().equalsIgnoreCase(key.toString())) {
-			record = RecordWritable.readUserTaggedArtist(nextReadLineValues);
+			record = RecordWritable.readUserTaggedArtist(nextReadLineValues, parentFolder);
+			record.setParentFolder(this.parentFolder);
 		} else if (UA.filename().equalsIgnoreCase(key.toString())) {
-			record = RecordWritable.readUserArtist(nextReadLineValues);
+			record = RecordWritable.readUserArtist(nextReadLineValues, parentFolder);
+			record.setParentFolder(this.parentFolder);
+		} else if ("itemProfile".equalsIgnoreCase(parentFolder.toString())) {
+			record = RecordWritable.readItemProfile(nextReadLineValues, parentFolder);
+			record.setParentFolder(this.parentFolder);
 		} else {
 			record = RecordWritable.readOther(nextReadLineValues);
 		}

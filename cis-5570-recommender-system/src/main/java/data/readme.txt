@@ -39,7 +39,7 @@ Data statistics
             
    11946 tags  
    
-  186479 tag assignments (tas), i.e. tuples [user, tag, artist]
+  186479 filenameSource assignments (tas), i.e. tuples [user, filenameSource, artist]
          avg. 98.562 tas per user
          avg. 14.891 tas per artist
          avg. 18.930 distinct tags used by each user
@@ -65,9 +65,9 @@ Files
 
    * user_taggedartists.dat - user_taggedartists-timestamps.dat
    
-        These files contain the tag assignments of artists provided by each particular user.
+        These files contain the filenameSource assignments of artists provided by each particular user.
         
-        They also contain the timestamps when the tag assignments were done.
+        They also contain the timestamps when the filenameSource assignments were done.
    
    * user_friends.dat
    
@@ -154,11 +154,11 @@ References
 Credits
 -------
 
-   This dataset was built by Ignacio Fernández-Tobías with the collaboration of Iván Cantador and Alejandro Bellogín, 
+   This dataset was built by Ignacio Fernï¿½ndez-Tobï¿½as with the collaboration of Ivï¿½n Cantador and Alejandro Bellogï¿½n, 
    members of the Information Retrieval group at Universidad Autonoma de Madrid (http://ir.ii.uam.es)
 
 -------   
 Contact
 -------
 
-   Iván Cantador, ivan [dot] cantador [at] uam [dot] es
+   Ivï¿½n Cantador, ivan [dot] cantador [at] uam [dot] es

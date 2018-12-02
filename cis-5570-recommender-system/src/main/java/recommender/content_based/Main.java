@@ -7,8 +7,7 @@ import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import recommender.fileformat.LastfmFileInputFormat;
-import recommender.hadoopext.io.ProfileAndTagWritable;
-import recommender.hadoopext.io.ProfileIdWritable;
+import recommender.hadoopext.io.*;
 
 public class Main {
 
@@ -29,18 +28,22 @@ public class Main {
         itemProfile.setOutputValueClass(DoubleWritable.class);
         success = itemProfile.waitForCompletion( true);
         // User Profile
-        Job userProfile = Job.getInstance( conf, "user profile");
-        userProfile.setJarByClass(ItemProfile.class);
-        LastfmFileInputFormat.addInputPath(userProfile, new Path("input"));
-        userProfile.setInputFormatClass(LastfmFileInputFormat.class);
-        FileOutputFormat.setOutputPath(userProfile, new Path("userProfile"));
-        userProfile.setMapperClass(ItemProfile.ItemProfileMapper.class);
-        userProfile.setReducerClass(ItemProfile.ItemProfileReducer.class);
-        userProfile.setMapOutputKeyClass(ProfileIdWritable.class);
-        userProfile.setMapOutputValueClass(IntWritable.class);
-        userProfile.setOutputKeyClass(ProfileAndTagWritable.class);
-        userProfile.setOutputValueClass(DoubleWritable.class);
-        success = userProfile.waitForCompletion( true) && success;
+        Job userArtistJoin = Job.getInstance( conf, "user profile");
+        userArtistJoin.setJarByClass(UserProfile.class);
+        LastfmFileInputFormat.addInputPath(userArtistJoin, new Path("itemProfile"));
+        LastfmFileInputFormat.addInputPath(userArtistJoin, new Path("input"));
+        userArtistJoin.setInputFormatClass(LastfmFileInputFormat.class);
+        FileOutputFormat.setOutputPath(userArtistJoin, new Path("userProfile"));
+        userArtistJoin.setMapperClass(UserProfile.JoinMapper.class);
+        userArtistJoin.setReducerClass(UserProfile.JoinReducer.class);
+        userArtistJoin.setPartitionerClass(TaggedJoiningPartitioner.class);
+        userArtistJoin.setGroupingComparatorClass(TaggedJoiningGroupingComparator.class);
+        userArtistJoin.setMapOutputKeyClass(TaggedKey.class);
+        userArtistJoin.setMapOutputValueClass(RelationJoinValueWritable.class);
+        userArtistJoin.setOutputKeyClass(ProfileAndTagWritable.class);
+        userArtistJoin.setOutputValueClass(DoubleWritable.class);
+        success = userArtistJoin.waitForCompletion( true) && success;
+
         System.exit(success ? 0 : 1);
     }
 

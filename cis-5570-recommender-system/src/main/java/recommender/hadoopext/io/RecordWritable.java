@@ -1,9 +1,7 @@
 package recommender.hadoopext.io;
 
-import org.apache.hadoop.io.ArrayWritable;
-import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.io.Text;
-import org.apache.hadoop.io.WritableComparable;
+import org.apache.commons.lang.StringUtils;
+import org.apache.hadoop.io.*;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -15,15 +13,26 @@ public class RecordWritable implements WritableComparable<RecordWritable> {
     private IntWritable artistId;
     private IntWritable weight;
     private IntWritable tagId;
+    private DoubleWritable tagWeight;
 
     private Text artistName;
     private Text artistUrl;
     private Text artistPictureUrl;
     private Text tagValue;
 
+    public Text getParentFolder() {
+        return parentFolder;
+    }
+
+    public void setParentFolder(Text parentFolder) {
+        this.parentFolder = parentFolder;
+    }
+
+    private Text parentFolder;
+
     private ArrayWritable misc;
 
-    public static RecordWritable readUserTaggedArtist(String[] record) throws IOException {
+    public static RecordWritable readUserTaggedArtist(String[] record, Text pf) throws IOException {
         RecordWritable r = new RecordWritable();
 
         // Convert string values
@@ -35,11 +44,12 @@ public class RecordWritable implements WritableComparable<RecordWritable> {
         r.userId = new IntWritable(u);
         r.artistId = new IntWritable(a);
         r.tagId = new IntWritable(t);
+        r.parentFolder = pf;
 
         return r;
     }
 
-    public static RecordWritable readUserArtist(String[] record) {
+    public static RecordWritable readUserArtist(String[] record, Text pf) {
         RecordWritable r = new RecordWritable();
 
         // Convert string values
@@ -51,6 +61,27 @@ public class RecordWritable implements WritableComparable<RecordWritable> {
         r.userId = new IntWritable(u);
         r.artistId = new IntWritable(a);
         r.weight =  new IntWritable(w);
+        r.parentFolder = pf;
+
+        return r;
+    }
+
+    public static RecordWritable readItemProfile(String[] record, Text pf) {
+        RecordWritable r = new RecordWritable();
+
+        // Convert string values
+        String artist_profile = record[0];
+        String[] artist_tuple = StringUtils.split(artist_profile, ',');
+        int artist_id = Integer.parseInt(StringUtils.substringAfter(artist_tuple[0], "-"));
+        int tag_id = Integer.parseInt(StringUtils.substringBefore(artist_tuple[1], ")"));
+        double score = Double.parseDouble(record[1]);
+
+
+        // Set writables
+        r.artistId = new IntWritable(artist_id);
+        r.tagId = new IntWritable(tag_id);
+        r.tagWeight =  new DoubleWritable(score);
+        r.parentFolder = pf;
 
         return r;
     }
@@ -156,5 +187,9 @@ public class RecordWritable implements WritableComparable<RecordWritable> {
         sb.setLength(Math.max(sb.length() - 1, 0));
         sb.append("]");
         return sb.toString();
+    }
+
+    public DoubleWritable getTagWeight() {
+        return tagWeight;
     }
 }
