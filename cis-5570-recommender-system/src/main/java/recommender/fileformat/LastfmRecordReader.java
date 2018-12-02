@@ -48,13 +48,16 @@ public class LastfmRecordReader extends RecordReader<Text, RecordWritable> {
 		in = new BufferedReader(new InputStreamReader(fileIn));
 		key.set(file.getName());
 
-		// Read the first line as the record_schema
-		String sch = in.readLine();
-		// Update the position marker and line #
-		pos += sch.length();
-		line++;
-		// Get the record schema length
-		record_schema_length = StringUtils.split(sch).length;
+		if ("input".equalsIgnoreCase(parentFolder.toString())) {
+			// Read the first line as the record_schema
+			String sch = in.readLine();
+			// Update the position marker and line #
+			pos += sch.length();
+			line++;
+			// Get the record schema length
+			record_schema_length = StringUtils.split(sch).length;
+		}
+
 	}
 
 	@Override
@@ -110,7 +113,7 @@ public class LastfmRecordReader extends RecordReader<Text, RecordWritable> {
 		// Split values to an array
 		String[] nextReadLineValues = StringUtils.split(nextReadLine);
 
-		if (record_schema_length != nextReadLineValues.length) {
+		if (record_schema_length > 0 && record_schema_length != nextReadLineValues.length) {
 			// Values don't match up to record_schema. Throw IO error
 			throw new IOException(
 					String.format("ERROR: Values do not match up to record_schema in file %s at line %d. Schema size: %d, Record size: %d", key, line, record_schema_length, nextReadLineValues.length)
@@ -120,15 +123,15 @@ public class LastfmRecordReader extends RecordReader<Text, RecordWritable> {
 		// Assign read line values to the record writable, depending on file type
 		if (UT.filename().equalsIgnoreCase(key.toString())) {
 			record = RecordWritable.readUserTaggedArtist(nextReadLineValues, parentFolder);
-			record.setParentFolder(this.parentFolder);
 		} else if (UA.filename().equalsIgnoreCase(key.toString())) {
 			record = RecordWritable.readUserArtist(nextReadLineValues, parentFolder);
-			record.setParentFolder(this.parentFolder);
 		} else if ("itemProfile".equalsIgnoreCase(parentFolder.toString())) {
 			record = RecordWritable.readItemProfile(nextReadLineValues, parentFolder);
-			record.setParentFolder(this.parentFolder);
+		} else if ("userProfJoin".equalsIgnoreCase(parentFolder.toString())
+				|| "userProfile".equalsIgnoreCase(parentFolder.toString())) {
+			record = RecordWritable.readUserProfile(nextReadLineValues, parentFolder);
 		} else {
-			record = RecordWritable.readOther(nextReadLineValues);
+			record = RecordWritable.readOther(nextReadLineValues, parentFolder);
 		}
 
 		return true;

@@ -11,6 +11,16 @@ public class ProfileAndTagWritable implements WritableComparable<ProfileAndTagWr
     private ProfileIdWritable profileId;
     private IntWritable tagId;
 
+    public ProfileAndTagWritable() {
+        this.profileId = new ProfileIdWritable(false, 0);
+        this.tagId = new IntWritable(0);
+    }
+
+    public ProfileAndTagWritable(ProfileIdWritable profileId, IntWritable tagId) {
+        this.profileId = profileId;
+        this.tagId = tagId;
+    }
+
     @Override
     public int compareTo(ProfileAndTagWritable o) {
         int cmp = profileId.compareTo(o.profileId);

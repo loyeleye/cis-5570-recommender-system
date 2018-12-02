@@ -86,10 +86,31 @@ public class RecordWritable implements WritableComparable<RecordWritable> {
         return r;
     }
 
-    public static RecordWritable readOther(String[] record) {
+    public static RecordWritable readUserProfile(String[] record, Text pf) {
+        RecordWritable r = new RecordWritable();
+
+        // Convert String values
+        String user_profile = record[0];
+        String[] user_tuple = StringUtils.split(user_profile, ',');
+        int user_id = Integer.parseInt(StringUtils.substringAfter(user_tuple[0], "-"));
+        int tag_id = Integer.parseInt(StringUtils.substringBefore(user_tuple[1], ")"));
+        double score = Double.parseDouble(record[1]);
+
+
+        // Set writables
+        r.userId = new IntWritable(user_id);
+        r.tagId = new IntWritable(tag_id);
+        r.tagWeight = new DoubleWritable(score);
+        r.parentFolder = pf;
+
+        return r;
+    }
+
+    public static RecordWritable readOther(String[] record, Text pf) {
         RecordWritable r = new RecordWritable();
 
         r.misc = new ArrayWritable(record);
+        r.parentFolder = pf;
 
         return r;
     }

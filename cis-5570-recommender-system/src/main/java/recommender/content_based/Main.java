@@ -27,15 +27,15 @@ public class Main {
         itemProfile.setOutputKeyClass(ProfileAndTagWritable.class);
         itemProfile.setOutputValueClass(DoubleWritable.class);
         success = itemProfile.waitForCompletion( true);
-        // User Profile
-        Job userArtistJoin = Job.getInstance( conf, "user profile");
+        // User Profile Join
+        Job userArtistJoin = Job.getInstance( conf, "user profile join");
         userArtistJoin.setJarByClass(UserProfile.class);
         LastfmFileInputFormat.addInputPath(userArtistJoin, new Path("itemProfile"));
         LastfmFileInputFormat.addInputPath(userArtistJoin, new Path("input"));
         userArtistJoin.setInputFormatClass(LastfmFileInputFormat.class);
-        FileOutputFormat.setOutputPath(userArtistJoin, new Path("userProfile"));
-        userArtistJoin.setMapperClass(UserProfile.JoinMapper.class);
-        userArtistJoin.setReducerClass(UserProfile.JoinReducer.class);
+        FileOutputFormat.setOutputPath(userArtistJoin, new Path("userProfJoin"));
+        userArtistJoin.setMapperClass(UserProfile.UserProfileJoinMapper.class);
+        userArtistJoin.setReducerClass(UserProfile.UserProfileJoinReducer.class);
         userArtistJoin.setPartitionerClass(TaggedJoiningPartitioner.class);
         userArtistJoin.setGroupingComparatorClass(TaggedJoiningGroupingComparator.class);
         userArtistJoin.setMapOutputKeyClass(TaggedKey.class);
@@ -43,7 +43,20 @@ public class Main {
         userArtistJoin.setOutputKeyClass(ProfileAndTagWritable.class);
         userArtistJoin.setOutputValueClass(DoubleWritable.class);
         success = userArtistJoin.waitForCompletion( true) && success;
-
+        // User Profile Aggregate
+        Job userProfileAgg = Job.getInstance(conf, "user profile agg");
+        userProfileAgg.setJarByClass(UserProfile.class);
+        LastfmFileInputFormat.addInputPath(userProfileAgg, new Path("userProfJoin"));
+        userProfileAgg.setInputFormatClass(LastfmFileInputFormat.class);
+        FileOutputFormat.setOutputPath(userProfileAgg, new Path("userProfile"));
+        userProfileAgg.setMapperClass(UserProfile.UserProfileAggregateMapper.class);
+        userProfileAgg.setReducerClass(UserProfile.UserProfileAggregateReducer.class);
+        userProfileAgg.setMapOutputKeyClass(ProfileAndTagWritable.class);
+        userProfileAgg.setMapOutputValueClass(DoubleWritable.class);
+        userProfileAgg.setOutputKeyClass(ProfileAndTagWritable.class);
+        userProfileAgg.setOutputValueClass(DoubleWritable.class);
+        success = userProfileAgg.waitForCompletion( true) && success;
+        // End Process
         System.exit(success ? 0 : 1);
     }
 

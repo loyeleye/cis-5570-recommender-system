@@ -14,6 +14,6 @@ public class TaggedJoiningGroupingComparator extends WritableComparator {
     public int compare(WritableComparable a, WritableComparable b) {
         TaggedKey taggedKey1 = (TaggedKey)a;
         TaggedKey taggedKey2 = (TaggedKey)b;
-        return taggedKey1.getFilenameSource().compareTo(taggedKey2.getFilenameSource());
+        return taggedKey1.getArtistIdToJoin().compareTo(taggedKey2.getArtistIdToJoin());
     }
 }
