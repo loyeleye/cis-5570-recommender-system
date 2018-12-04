@@ -125,10 +125,12 @@ public class LastfmRecordReader extends RecordReader<Text, RecordWritable> {
 			record = RecordWritable.readUserTaggedArtist(nextReadLineValues, parentFolder);
 		} else if (UA.filename().equalsIgnoreCase(key.toString())) {
 			record = RecordWritable.readUserArtist(nextReadLineValues, parentFolder);
-		} else if ("itemProfile".equalsIgnoreCase(parentFolder.toString())) {
+		} else if ("itemProfile".equalsIgnoreCase(parentFolder.toString())
+				|| "itemProfilePC".equalsIgnoreCase(parentFolder.toString())) {
 			record = RecordWritable.readItemProfile(nextReadLineValues, parentFolder);
 		} else if ("userProfJoin".equalsIgnoreCase(parentFolder.toString())
-				|| "userProfile".equalsIgnoreCase(parentFolder.toString())) {
+				|| "userProfile".equalsIgnoreCase(parentFolder.toString())
+				|| "userProfilePC".equalsIgnoreCase(parentFolder.toString())) {
 			record = RecordWritable.readUserProfile(nextReadLineValues, parentFolder);
 		} else {
 			record = RecordWritable.readOther(nextReadLineValues, parentFolder);

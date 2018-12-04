@@ -2,35 +2,36 @@ package recommender.hadoopext.io;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.io.*;
+import recommender.content_based.Feature;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.lang.reflect.Field;
 
-public class RecordWritable implements WritableComparable<RecordWritable> {
+public class RecordWritable implements Writable {
     private IntWritable userId;
     private IntWritable artistId;
     private IntWritable weight;
     private IntWritable tagId;
-    private DoubleWritable tagWeight;
-
+    private DoubleWritable score;
+    private Text featureId;
     private Text artistName;
     private Text artistUrl;
     private Text artistPictureUrl;
     private Text tagValue;
-
-    public Text getParentFolder() {
-        return parentFolder;
-    }
-
-    public void setParentFolder(Text parentFolder) {
-        this.parentFolder = parentFolder;
-    }
-
     private Text parentFolder;
-
     private ArrayWritable misc;
+
+    public Feature asFeature() throws Exception {
+        if (featureId == null) throw new Exception("This record can not be converted into a feature! File is from " + parentFolder.toString() + ((parentFolder.toString().contains("Profile")) ?
+                "... This should work. Something strange happened!" : "... Only records in the ItemProfile or UserProfile folders are features!"));
+
+        boolean isUser = (userId.get() > artistId.get());
+        boolean isTag = (tagId != null);
+
+        return new Feature(isUser, (isUser) ? userId.get() : artistId.get(), featureId.toString(), isTag, score.get());
+    }
 
     public static RecordWritable readUserTaggedArtist(String[] record, Text pf) throws IOException {
         RecordWritable r = new RecordWritable();
@@ -66,44 +67,43 @@ public class RecordWritable implements WritableComparable<RecordWritable> {
         return r;
     }
 
-    public static RecordWritable readItemProfile(String[] record, Text pf) {
+    private static RecordWritable readProfile(String[] record, Text pf, Boolean isUser) {
         RecordWritable r = new RecordWritable();
 
         // Convert string values
         String artist_profile = record[0];
         String[] artist_tuple = StringUtils.split(artist_profile, ',');
-        int artist_id = Integer.parseInt(StringUtils.substringAfter(artist_tuple[0], "-"));
-        int tag_id = Integer.parseInt(StringUtils.substringBefore(artist_tuple[1], ")"));
+        int profile_id = Integer.parseInt(StringUtils.substringAfter(artist_tuple[0], "-"));
+        String feature = StringUtils.substringBefore(artist_tuple[1], ")");
         double score = Double.parseDouble(record[1]);
 
-
         // Set writables
-        r.artistId = new IntWritable(artist_id);
-        r.tagId = new IntWritable(tag_id);
-        r.tagWeight =  new DoubleWritable(score);
+        if ("playcount".equalsIgnoreCase(feature)) {
+            r.featureId = new Text(feature);
+        } else {
+            int tag_id = Integer.parseInt(feature);
+            r.tagId = new IntWritable(tag_id);
+            r.featureId = new Text("tag");
+        }
+
+        if (isUser) {
+            r.userId = new IntWritable(profile_id);
+        } else {
+            r.artistId = new IntWritable(profile_id);
+        }
+
+        r.score =  new DoubleWritable(score);
         r.parentFolder = pf;
 
         return r;
     }
 
+    public static RecordWritable readItemProfile(String[] record, Text pf) {
+        return readProfile(record, pf, false);
+    }
+
     public static RecordWritable readUserProfile(String[] record, Text pf) {
-        RecordWritable r = new RecordWritable();
-
-        // Convert String values
-        String user_profile = record[0];
-        String[] user_tuple = StringUtils.split(user_profile, ',');
-        int user_id = Integer.parseInt(StringUtils.substringAfter(user_tuple[0], "-"));
-        int tag_id = Integer.parseInt(StringUtils.substringBefore(user_tuple[1], ")"));
-        double score = Double.parseDouble(record[1]);
-
-
-        // Set writables
-        r.userId = new IntWritable(user_id);
-        r.tagId = new IntWritable(tag_id);
-        r.tagWeight = new DoubleWritable(score);
-        r.parentFolder = pf;
-
-        return r;
+        return readProfile(record, pf, true);
     }
 
     public static RecordWritable readOther(String[] record, Text pf) {
@@ -113,6 +113,18 @@ public class RecordWritable implements WritableComparable<RecordWritable> {
         r.parentFolder = pf;
 
         return r;
+    }
+
+    public Text getFeatureId() {
+        return featureId;
+    }
+
+    public Text getParentFolder() {
+        return parentFolder;
+    }
+
+    public void setParentFolder(Text parentFolder) {
+        this.parentFolder = parentFolder;
     }
 
     public void write(DataOutput out) throws IOException {
@@ -141,16 +153,6 @@ public class RecordWritable implements WritableComparable<RecordWritable> {
         tagValue.readFields(in);
 
         misc.readFields(in);
-    }
-
-    public int compareTo(RecordWritable o) {
-        int cmp = userId.compareTo(o.userId);
-
-        if (cmp == 0) cmp = artistId.compareTo(o.artistId);
-        if (cmp == 0) cmp = tagId.compareTo(o.tagId);
-        if (cmp == 0) cmp = weight.compareTo(o.weight);
-
-        return cmp;
     }
 
     public IntWritable getUserId() {
@@ -210,7 +212,7 @@ public class RecordWritable implements WritableComparable<RecordWritable> {
         return sb.toString();
     }
 
-    public DoubleWritable getTagWeight() {
-        return tagWeight;
+    public DoubleWritable getScore() {
+        return score;
     }
 }

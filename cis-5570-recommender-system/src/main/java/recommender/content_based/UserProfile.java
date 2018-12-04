@@ -13,97 +13,154 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 class UserProfile {
-    public static class UserProfileJoinMapper
-            extends Mapper<Text, RecordWritable, TaggedKey, RelationJoinValueWritable> {
-        private final Double WEIGHT_CUTOFF = 0.10;
+
+    /**
+     * We do a relational join when attempting to find the tag weights for the user profile to make sure that for each user,
+     * there is a tag weight *feature* corresponding to the artists they have listened to. We inner join the item_profile
+     * "table" we have just generated with the user_artists table using the artist id.
+     * ----------------------------------------------
+     * Item profile schema ==> [artist] [tag] [tag-weight]
+     * User artist schema ==> [user] [artist] [weight]
+     * ----------------------------------------------
+     * Final User profile schema (reducer output) ==> [user] [tag] [tag-weight] one for each artist
+     */
+    public static class UserProfileRelationJoinMapper
+            extends Mapper<Text, RecordWritable, JoinByArtistKey, UserProfileRelationJoinWritable> {
+        // Any tag weight that is lower than this threshold will be filtered and not used to calculate the final recommendation.
+        // This is necessary only because the mapper will generate an large number of intermediate values, many of which
+        // really should not have much impact on the final recommendation (similarity) score.
+        private final Double ITEM_PROFILE_TAG_WEIGHT_CUTOFF = 0.10;
 
         public void map(Text filename, RecordWritable record, Context context) throws IOException, InterruptedException {
-
+            // If the filename the record being read from is "user_artists.dat"
             if (Filenames.UA.filename().equalsIgnoreCase(filename.toString())) {
-                TaggedKey myTaggedKey = new TaggedKey(record.getArtistId(), filename);
+                JoinByArtistKey myJoinByArtistKey = new JoinByArtistKey(record.getArtistId(), filename);
                 DoubleWritable weight = new DoubleWritable(record.getWeight().get());
-                RelationJoinValueWritable outputValues = new RelationJoinValueWritable(filename, weight, record.getUserId(), new IntWritable(0));
+                UserProfileRelationJoinWritable outputValues = new UserProfileRelationJoinWritable(filename, weight, record.getUserId(), new IntWritable(0));
                 // Write output to file
-                context.write(myTaggedKey, outputValues);
+                context.write(myJoinByArtistKey, outputValues);
             }
+            // If the filename the record being read from is from the folder "itemProfile"
             if ("itemProfile".equalsIgnoreCase(record.getParentFolder().toString())) {
-                if (record.getTagWeight().get() > WEIGHT_CUTOFF) {
-                    TaggedKey myTaggedKey = new TaggedKey(record.getArtistId(), record.getParentFolder());
-                    RelationJoinValueWritable outputValues = new RelationJoinValueWritable(record.getParentFolder(), record.getTagWeight(), new IntWritable(0), record.getTagId());
+                if (record.getScore().get() > ITEM_PROFILE_TAG_WEIGHT_CUTOFF) {
+                    JoinByArtistKey joinByArtistKey = new JoinByArtistKey(record.getArtistId(), record.getParentFolder());
+                    UserProfileRelationJoinWritable outputValues = new UserProfileRelationJoinWritable(record.getParentFolder(), record.getScore(), new IntWritable(0), record.getTagId());
                     // Write output to file
-                    context.write(myTaggedKey, outputValues);
+                    context.write(joinByArtistKey, outputValues);
                 }
             }
         }
     }
 
-    public static class UserProfileJoinReducer
+    /**
+     * We are doing a *reduce side join* here using the [artist-id] as the primary key and [relational_table]
+     * (aka the file the record comes from) as the secondary key for sorting.
+     * We've created a custom partitioner and grouping class so that the secondary key is ignored when interpreting
+     * which values to send to which reducers. It is only used for sorting.
+     * ----------------------------------------------
+     * Final Output: User profile schema ==> [user] [tag] [tag-weight] one for each artist
+     */
+    public static class UserProfileRelationJoinReducer
             extends
-            Reducer<TaggedKey, RelationJoinValueWritable, ProfileAndTagWritable, DoubleWritable> {
-
-        private DoubleWritable userTagScore = new DoubleWritable();
-        private ProfileAndTagWritable profileAndTag = new ProfileAndTagWritable();
-
-        public void reduce(TaggedKey key, Iterable<RelationJoinValueWritable> values, Context context
+            Reducer<JoinByArtistKey, UserProfileRelationJoinWritable, ProfileFeatureWritable, DoubleWritable> {
+        public void reduce(JoinByArtistKey key, Iterable<UserProfileRelationJoinWritable> values, Context context
         ) throws IOException,
                 InterruptedException {
-            ArrayList<RelationJoinValueWritable> firstFile = new ArrayList<>();
+            ArrayList<UserProfileRelationJoinWritable> firstFile = new ArrayList<>();
             String firstFilename = key.getFilenameSource().toString();
-            for (RelationJoinValueWritable value : values) {
+            DoubleWritable userTagScore = new DoubleWritable();
+            ProfileFeatureWritable profileAndTag = new ProfileFeatureWritable();
+            ProfileIdWritable profileId = new ProfileIdWritable(true, null);
+            profileAndTag.setProfileId(profileId);
+
+            for (UserProfileRelationJoinWritable value : values) {
                 if (firstFilename.equals(value.getRelationTable().toString())) {
-                    Text f = new Text(value.getRelationTable().toString());
-                    IntWritable u = new IntWritable(value.getUserId().get());
-                    IntWritable t = new IntWritable(value.getTagId().get());
-                    DoubleWritable w = new DoubleWritable(value.getTagWeight().get());
-                    RelationJoinValueWritable rjv = new RelationJoinValueWritable(f,w,u,t);
+                    Text relationalTable = new Text(value.getRelationTable().toString());
+                    IntWritable userId = new IntWritable(value.getUserId().get());
+                    IntWritable tagId = new IntWritable(value.getTagId().get());
+                    DoubleWritable tagWeight = new DoubleWritable(value.getTagWeight().get());
+                    UserProfileRelationJoinWritable rjv = new UserProfileRelationJoinWritable(relationalTable,tagWeight,userId,tagId);
                     firstFile.add(rjv);
                 }
                 else {
                     if ("itemProfile".equalsIgnoreCase(value.getRelationTable().toString())) {
-                        profileAndTag.setTagId(value.getTagId());
-                        for (RelationJoinValueWritable userArtist: firstFile) {
-                            ProfileIdWritable profileId = new ProfileIdWritable(true, userArtist.getUserId().get());
-                            profileAndTag.setProfileId(profileId);
-                            userTagScore.set(value.getTagWeight().get() * userArtist.getTagWeight().get());
+                        userTagScore.set(value.getTagWeight().get());
+                        profileAndTag.setTagAsFeature(value.getTagId());
+                        for (UserProfileRelationJoinWritable userArtist: firstFile) {
+                            profileId.setId(userArtist.getUserId().get());
                             context.write(profileAndTag, userTagScore);
                         }
                     } else {
-                        ProfileIdWritable profileId = new ProfileIdWritable(true, value.getUserId().get());
-                        profileAndTag.setProfileId(profileId);
-                        for (RelationJoinValueWritable itemProfile: firstFile) {
-                            profileAndTag.setTagId(itemProfile.getTagId());
-                            userTagScore.set(value.getTagWeight().get() * itemProfile.getTagWeight().get());
+                        profileId.setId(value.getUserId().get());
+                        for (UserProfileRelationJoinWritable itemProfile: firstFile) {
+                            userTagScore.set(itemProfile.getTagWeight().get());
+                            profileAndTag.setTagAsFeature(itemProfile.getTagId());
                             context.write(profileAndTag, userTagScore);
                         }
                     }
                 }
             }
         }
-
-
     }
 
-    public static class UserProfileAggregateMapper
-            extends Mapper<Text, RecordWritable, ProfileAndTagWritable, DoubleWritable> {
+    /**
+     * Given a list of user features: one for each individual <user,artist,tag> combination:
+     * Get the average for each <user,tag> pair.
+     */
+    public static class UserProfileTagWeightAveragingMapper
+            extends Mapper<Text, RecordWritable, ProfileFeatureWritable, AverageWritable> {
         public void map(Text filename, RecordWritable record, Context context) throws IOException, InterruptedException {
             ProfileIdWritable profileId = new ProfileIdWritable(true, record.getUserId().get());
-            ProfileAndTagWritable profileAndTag = new ProfileAndTagWritable(profileId, record.getTagId());
-            context.write(profileAndTag, record.getTagWeight());
+            ProfileFeatureWritable profileAndTag = new ProfileFeatureWritable(profileId, record.getTagId());
+            AverageWritable tagWeight = new AverageWritable(record.getScore().get(), 1);
+            // Write output to file
+            context.write(profileAndTag, tagWeight);
         }
     }
 
-    public static class UserProfileAggregateReducer
+    /**
+     * Given a list of user features: one for each individual <user,artist,tag> combination:
+     * Get the average for each <user,tag> pair.
+     */
+    public static class UserProfileTagWeightAveragingReducer
             extends
-            Reducer<ProfileAndTagWritable, DoubleWritable, ProfileAndTagWritable, DoubleWritable> {
+            Reducer<ProfileFeatureWritable, AverageWritable, ProfileFeatureWritable, DoubleWritable> {
 
-        public void reduce(ProfileAndTagWritable profileAndTag, Iterable<DoubleWritable> values, Context context
+        public void reduce(ProfileFeatureWritable profileAndTag, Iterable<AverageWritable> values, Context context
         ) throws IOException,
                 InterruptedException {
-            double aggregateTagScore = 0;
-            for (DoubleWritable value: values) {
-                aggregateTagScore += value.get();
+            AverageWritable average = new AverageWritable();
+            for (AverageWritable value: values) {
+                average.add(value);
             }
-            context.write(profileAndTag, new DoubleWritable(aggregateTagScore));
+            context.write(profileAndTag, new DoubleWritable(average.getAverage()));
+        }
+    }
+
+    public static class UserProfileWeightMapper
+            extends Mapper<Text, RecordWritable, ProfileIdWritable, AverageWritable> {
+        public void map(Text filename, RecordWritable record, Context context) throws IOException, InterruptedException {
+            if (Filenames.UA.filename().equalsIgnoreCase(filename.toString())) {
+                ProfileIdWritable profileId = new ProfileIdWritable(true, record.getUserId().get());
+                AverageWritable weight = new AverageWritable((double) record.getWeight().get(), 1);
+                // Write output to file
+                context.write(profileId, weight);
+            }
+        }
+    }
+
+    public static class UserProfileWeightReducer
+            extends
+            Reducer<ProfileIdWritable, AverageWritable, ProfileIdWritable, DoubleWritable> {
+
+        public void reduce(ProfileIdWritable profileId, Iterable<AverageWritable> values, Context context
+        ) throws IOException,
+                InterruptedException {
+            AverageWritable average = new AverageWritable();
+            for (AverageWritable value: values) {
+                average.add(value);
+            }
+            context.write(profileId, new DoubleWritable(average.getAverage()));
         }
     }
 }

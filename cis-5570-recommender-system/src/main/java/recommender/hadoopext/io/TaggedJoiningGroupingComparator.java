@@ -7,13 +7,13 @@ public class TaggedJoiningGroupingComparator extends WritableComparator {
 
 
     public TaggedJoiningGroupingComparator() {
-        super(TaggedKey.class,true);
+        super(JoinByArtistKey.class,true);
     }
 
     @Override
     public int compare(WritableComparable a, WritableComparable b) {
-        TaggedKey taggedKey1 = (TaggedKey)a;
-        TaggedKey taggedKey2 = (TaggedKey)b;
-        return taggedKey1.getArtistIdToJoin().compareTo(taggedKey2.getArtistIdToJoin());
+        JoinByArtistKey joinByArtistKey1 = (JoinByArtistKey)a;
+        JoinByArtistKey joinByArtistKey2 = (JoinByArtistKey)b;
+        return joinByArtistKey1.getArtistIdToJoin().compareTo(joinByArtistKey2.getArtistIdToJoin());
     }
 }

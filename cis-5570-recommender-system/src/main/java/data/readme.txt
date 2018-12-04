@@ -81,7 +81,7 @@ Data format
 
    * artists.dat
    
-        id \t name \t url \t pictureURL
+        id \t type \t url \t pictureURL
 
         Example:
         707	Metallica	http://www.last.fm/music/Metallica	http://userserve-ak.last.fm/serve/252/7560709.jpg

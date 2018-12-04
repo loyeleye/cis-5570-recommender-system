@@ -9,22 +9,22 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class RelationJoinValueWritable implements Writable {
+public class UserProfileRelationJoinWritable implements Writable {
 
     private Text relationTable = new Text();
     private IntWritable userId = new IntWritable();
     private IntWritable tagId = new IntWritable();
     private DoubleWritable tagWeight = new DoubleWritable();
-    public RelationJoinValueWritable() {
+    public UserProfileRelationJoinWritable() {
     }
-    public RelationJoinValueWritable(Text relationTable, DoubleWritable tagWeight, IntWritable userId, IntWritable tagId) {
+    public UserProfileRelationJoinWritable(Text relationTable, DoubleWritable tagWeight, IntWritable userId, IntWritable tagId) {
         this.relationTable = relationTable;
         this.userId = userId;
         this.tagId = tagId;
         this.tagWeight = tagWeight;
     }
 
-    public RelationJoinValueWritable(Text relationTable, DoubleWritable tagWeight) {
+    public UserProfileRelationJoinWritable(Text relationTable, DoubleWritable tagWeight) {
         this.relationTable = relationTable;
         this.tagWeight = tagWeight;
     }

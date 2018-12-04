@@ -37,6 +37,8 @@ public class ProfileIdWritable implements WritableComparable<ProfileIdWritable> 
         return this.id;
     }
 
+    public void setId(Integer id) { this.id = id; }
+
     public Boolean isUser() {
         return isUserProfile;
     }

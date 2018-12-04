@@ -9,23 +9,23 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class TaggedKey implements Writable, WritableComparable<TaggedKey> {
+public class JoinByArtistKey implements Writable, WritableComparable<JoinByArtistKey> {
 
     private IntWritable artistIdToJoin = new IntWritable();
     private Text filenameSource = new Text();
 
-    public TaggedKey(IntWritable artistIdJoinKey, Text filename) {
+    public JoinByArtistKey(IntWritable artistIdJoinKey, Text filename) {
         this.artistIdToJoin = artistIdJoinKey;
         this.filenameSource = filename;
     }
 
-    public TaggedKey() {}
+    public JoinByArtistKey() {}
 
     @Override
-    public int compareTo(TaggedKey taggedKey) {
-        int compareValue = this.artistIdToJoin.compareTo(taggedKey.getArtistIdToJoin());
+    public int compareTo(JoinByArtistKey joinByArtistKey) {
+        int compareValue = this.artistIdToJoin.compareTo(joinByArtistKey.getArtistIdToJoin());
         if(compareValue == 0 ){
-            compareValue = this.filenameSource.compareTo(taggedKey.getFilenameSource());
+            compareValue = this.filenameSource.compareTo(joinByArtistKey.getFilenameSource());
         }
         return compareValue;
     }
