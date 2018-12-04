@@ -2,7 +2,7 @@
 
 case "$1" in
         clean)
-            rm -rf itemProfile/ userProfile/ userProfJoin/
+            rm -rf itemProfile/ userProfile/ userProfJoin/ itemProfilePC/ userProfilePC/
             mvn clean
             ;;
 
