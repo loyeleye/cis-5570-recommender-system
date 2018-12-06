@@ -35,9 +35,9 @@ public class Main {
         FileOutputFormat.setOutputPath(userProfile1, new Path("userProfilePC"));
         userProfile1.setMapperClass(UserProfile.UserProfileWeightMapper.class);
         userProfile1.setReducerClass(UserProfile.UserProfileWeightReducer.class);
-        userProfile1.setMapOutputKeyClass(ProfileIdWritable.class);
+        userProfile1.setMapOutputKeyClass(ProfileFeatureWritable.class);
         userProfile1.setMapOutputValueClass(AverageWritable.class);
-        userProfile1.setOutputKeyClass(ProfileIdWritable.class);
+        userProfile1.setOutputKeyClass(ProfileFeatureWritable.class);
         userProfile1.setOutputValueClass(DoubleWritable.class);
         userProfile1.waitForCompletion(true);
         // Item Profile

@@ -138,29 +138,30 @@ class UserProfile {
     }
 
     public static class UserProfileWeightMapper
-            extends Mapper<Text, RecordWritable, ProfileIdWritable, AverageWritable> {
+            extends Mapper<Text, RecordWritable, ProfileFeatureWritable, AverageWritable> {
         public void map(Text filename, RecordWritable record, Context context) throws IOException, InterruptedException {
             if (Filenames.UA.filename().equalsIgnoreCase(filename.toString())) {
                 ProfileIdWritable profileId = new ProfileIdWritable(true, record.getUserId().get());
+                ProfileFeatureWritable profileAndWeight = new ProfileFeatureWritable(profileId, "playcount");
                 AverageWritable weight = new AverageWritable((double) record.getWeight().get(), 1);
                 // Write output to file
-                context.write(profileId, weight);
+                context.write(profileAndWeight, weight);
             }
         }
     }
 
     public static class UserProfileWeightReducer
             extends
-            Reducer<ProfileIdWritable, AverageWritable, ProfileIdWritable, DoubleWritable> {
+            Reducer<ProfileFeatureWritable, AverageWritable, ProfileFeatureWritable, DoubleWritable> {
 
-        public void reduce(ProfileIdWritable profileId, Iterable<AverageWritable> values, Context context
+        public void reduce(ProfileFeatureWritable profileAndWeight, Iterable<AverageWritable> values, Context context
         ) throws IOException,
                 InterruptedException {
             AverageWritable average = new AverageWritable();
             for (AverageWritable value: values) {
                 average.add(value);
             }
-            context.write(profileId, new DoubleWritable(average.getAverage()));
+            context.write(profileAndWeight, new DoubleWritable(average.getAverage()));
         }
     }
 }
