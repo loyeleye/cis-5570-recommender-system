@@ -2,7 +2,7 @@ package recommender.hadoopext.io;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.io.*;
-import recommender.content_based.Feature;
+import recommender.deprecated.Feature;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -15,23 +15,10 @@ public class RecordWritable implements Writable {
     private IntWritable weight;
     private IntWritable tagId;
     private DoubleWritable score;
+    private IntWritable count;
     private Text featureId;
-    private Text artistName;
-    private Text artistUrl;
-    private Text artistPictureUrl;
-    private Text tagValue;
     private Text parentFolder;
     private ArrayWritable misc;
-
-    public Feature asFeature() throws Exception {
-        if (featureId == null) throw new Exception("This record can not be converted into a feature! File is from " + parentFolder.toString() + ((parentFolder.toString().contains("Profile")) ?
-                "... This should work. Something strange happened!" : "... Only records in the ItemProfile or UserProfile folders are features!"));
-
-        boolean isUser = (userId.get() > artistId.get());
-        boolean isTag = (tagId != null);
-
-        return new Feature(isUser, (isUser) ? userId.get() : artistId.get(), featureId.toString(), isTag, score.get());
-    }
 
     public static RecordWritable readUserTaggedArtist(String[] record, Text pf) throws IOException {
         RecordWritable r = new RecordWritable();
@@ -61,7 +48,22 @@ public class RecordWritable implements Writable {
         // Set writables
         r.userId = new IntWritable(u);
         r.artistId = new IntWritable(a);
-        r.weight =  new IntWritable(w);
+        r.weight = new IntWritable(w);
+        r.parentFolder = pf;
+
+        return r;
+    }
+
+    public static RecordWritable readUserArtistCount(String[] record, Text pf) {
+        RecordWritable r = new RecordWritable();
+
+        // Convert string values
+        int userId = Integer.parseInt(record[0]);
+        int artist_count = Integer.parseInt(record[1]);
+
+        // Set writables
+        r.userId = new IntWritable(userId);
+        r.count = new IntWritable(artist_count);
         r.parentFolder = pf;
 
         return r;
@@ -71,10 +73,10 @@ public class RecordWritable implements Writable {
         RecordWritable r = new RecordWritable();
 
         // Convert string values
-        String artist_profile = record[0];
-        String[] artist_tuple = StringUtils.split(artist_profile, ',');
-        int profile_id = Integer.parseInt(StringUtils.substringAfter(artist_tuple[0], "-"));
-        String feature = StringUtils.substringBefore(artist_tuple[1], ")");
+        String profileAndTag = record[0];
+        String[] profileTagTuple = StringUtils.split(profileAndTag, ',');
+        int profileId = Integer.parseInt(StringUtils.substringAfter(profileTagTuple[0], "-"));
+        String feature = StringUtils.substringBefore(profileTagTuple[1], ")");
         double score = Double.parseDouble(record[1]);
 
         // Set writables
@@ -87,12 +89,12 @@ public class RecordWritable implements Writable {
         }
 
         if (isUser) {
-            r.userId = new IntWritable(profile_id);
+            r.userId = new IntWritable(profileId);
         } else {
-            r.artistId = new IntWritable(profile_id);
+            r.artistId = new IntWritable(profileId);
         }
 
-        r.score =  new DoubleWritable(score);
+        r.score = new DoubleWritable(score);
         r.parentFolder = pf;
 
         return r;
@@ -133,11 +135,6 @@ public class RecordWritable implements Writable {
         weight.write(out);
         tagId.write(out);
 
-        artistName.write(out);
-        artistUrl.write(out);
-        artistPictureUrl.write(out);
-        tagValue.write(out);
-
         misc.write(out);
     }
 
@@ -146,11 +143,6 @@ public class RecordWritable implements Writable {
         artistId.readFields(in);
         weight.readFields(in);
         tagId.readFields(in);
-
-        artistName.readFields(in);
-        artistUrl.readFields(in);
-        artistPictureUrl.readFields(in);
-        tagValue.readFields(in);
 
         misc.readFields(in);
     }
@@ -171,33 +163,13 @@ public class RecordWritable implements Writable {
         return tagId;
     }
 
-    public Text getArtistName() {
-        return artistName;
-    }
-
-    public Text getArtistUrl() {
-        return artistUrl;
-    }
-
-    public Text getArtistPictureUrl() {
-        return artistPictureUrl;
-    }
-
-    public Text getTagValue() {
-        return tagValue;
-    }
-
-    public ArrayWritable getMisc() {
-        return misc;
-    }
-
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("[");
         Object o;
-        for (Field f: RecordWritable.class.getDeclaredFields()) {
+        for (Field f : RecordWritable.class.getDeclaredFields()) {
             try {
-                 o = f.get(this);
+                o = f.get(this);
             } catch (IllegalAccessException e) {
                 e.printStackTrace();
                 o = "<error>";
@@ -214,5 +186,13 @@ public class RecordWritable implements Writable {
 
     public DoubleWritable getScore() {
         return score;
+    }
+
+    public IntWritable getCount() {
+        return count;
+    }
+
+    public void setCount(IntWritable count) {
+        this.count = count;
     }
 }

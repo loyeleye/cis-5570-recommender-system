@@ -54,7 +54,7 @@ public class AverageWritable implements Writable {
     }
 
     public double getAverage() {
-        return sum / count;
+        return (sum / count);
     }
 
     @Override

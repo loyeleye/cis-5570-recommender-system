@@ -2,7 +2,7 @@
 
 case "$1" in
         clean)
-            rm -rf itemProfile/ userProfile/ userProfJoin/ itemProfilePC/ userProfilePC/
+            rm -rf itemProfile/ userProfile/ userProfJoin/ itemProfilePC/ userProfilePC/ cosineSimilarity/ invertedIndex/ userProfNonNorm/ userArtistCount/
             mvn clean
             ;;
 

@@ -5,86 +5,125 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import recommender.fileformat.InvertedIndexFileInputFormat;
 import recommender.fileformat.LastfmFileInputFormat;
-import recommender.hadoopext.io.*;
+import recommender.hadoopext.io.AverageWritable;
+import recommender.hadoopext.io.ProfileFeatureWritable;
+import recommender.hadoopext.io.ProfileIdWritable;
+import recommender.hadoopext.io.cosine.KeyPair;
+import recommender.hadoopext.io.cosine.ValuePair;
+import recommender.hadoopext.io.inverted_index.InvertedIndexKeyWritable;
+import recommender.hadoopext.io.inverted_index.InvertedIndexValueWritable;
+import recommender.hadoopext.io.inverted_index.InvertedIndexVectorWritable;
+import recommender.hadoopext.io.relational_join.RelationalJoinKey;
+import recommender.hadoopext.io.relational_join.TaggedJoiningGroupingComparator;
+import recommender.hadoopext.io.relational_join.TaggedJoiningPartitioner;
+import recommender.hadoopext.io.relational_join.UserProfileRelationJoinWritable;
+
+import java.io.IOException;
+
+import static recommender.enums.FileFolders.*;
 
 public class Main {
+    static final Double SIMILARITY_THRESHOLD = 0.8;
+
+    private static Job createNewJob(String jobName, Class jobClass, String[] ins, String out, Class<? extends Mapper> mapperClass, Class<? extends Reducer> reducerClass,
+                            Class mapKeyOut, Class mapValueOut, Class reduceKeyOut, Class reduceValueOut) throws IOException {
+        Configuration conf = new Configuration();
+        Job newJob = Job.getInstance(conf, jobName);
+        newJob.setJarByClass(jobClass);
+        for (String in: ins) {
+            LastfmFileInputFormat.addInputPath(newJob, new Path(in));
+        }
+        newJob.setInputFormatClass(LastfmFileInputFormat.class);
+        FileOutputFormat.setOutputPath(newJob, new Path(out));
+        newJob.setMapperClass(mapperClass);
+        newJob.setReducerClass(reducerClass);
+        newJob.setMapOutputKeyClass(mapKeyOut);
+        newJob.setMapOutputValueClass(mapValueOut);
+        newJob.setOutputKeyClass(reduceKeyOut);
+        newJob.setOutputValueClass(reduceValueOut);
+        return newJob;
+    }
+
+    private static Job createNewJob(String jobName, Class jobClass, String in , String out, Class<? extends Mapper> mapperClass, Class<? extends Reducer> reducerClass,
+                                    Class mapKeyOut, Class mapValueOut, Class reduceKeyOut, Class reduceValueOut) throws IOException {
+        return createNewJob(jobName, jobClass, new String[]{in}, out, mapperClass, reducerClass, mapKeyOut, mapValueOut, reduceKeyOut, reduceValueOut);
+    }
+
+    private static Job createJobUsingInvertedIndexFIF(String jobName, Class jobClass, String[] ins, String out, Class<? extends Mapper> mapperClass, Class<? extends Reducer> reducerClass,
+                                    Class mapKeyOut, Class mapValueOut, Class reduceKeyOut, Class reduceValueOut) throws IOException {
+        Configuration conf = new Configuration();
+        Job newJob = Job.getInstance(conf, jobName);
+        newJob.setJarByClass(jobClass);
+        for (String in: ins) {
+            InvertedIndexFileInputFormat.addInputPath(newJob, new Path(in));
+        }
+        newJob.setInputFormatClass(InvertedIndexFileInputFormat.class);
+        FileOutputFormat.setOutputPath(newJob, new Path(out));
+        newJob.setMapperClass(mapperClass);
+        newJob.setReducerClass(reducerClass);
+        newJob.setMapOutputKeyClass(mapKeyOut);
+        newJob.setMapOutputValueClass(mapValueOut);
+        newJob.setOutputKeyClass(reduceKeyOut);
+        newJob.setOutputValueClass(reduceValueOut);
+        return newJob;
+    }
 
     public static void main( String[] args) throws Exception {
         boolean success;
-        Configuration conf = new Configuration();
-        // Item Profile Weight Averaging
-        Job itemProfile1 = Job.getInstance( conf, "item profile weights");
-        itemProfile1.setJarByClass(ItemProfile.class);
-        LastfmFileInputFormat.addInputPath(itemProfile1, new Path("input"));
-        itemProfile1.setInputFormatClass(LastfmFileInputFormat.class);
-        FileOutputFormat.setOutputPath(itemProfile1, new Path("itemProfilePC"));
-        itemProfile1.setMapperClass(ItemProfile.ItemProfileWeightMapper.class);
-        itemProfile1.setReducerClass(ItemProfile.ItemProfileWeightReducer.class);
-        itemProfile1.setMapOutputKeyClass(ProfileIdWritable.class);
-        itemProfile1.setMapOutputValueClass(IntWritable.class);
-        itemProfile1.setOutputKeyClass(ProfileIdWritable.class);
-        itemProfile1.setOutputValueClass(DoubleWritable.class);
-        itemProfile1.waitForCompletion(true);
-        // User Profile Weight Averaging
-        Job userProfile1 = Job.getInstance(conf, "user profile weights");
-        userProfile1.setJarByClass(UserProfile.class);
-        LastfmFileInputFormat.addInputPath(userProfile1, new Path("input"));
-        userProfile1.setInputFormatClass(LastfmFileInputFormat.class);
-        FileOutputFormat.setOutputPath(userProfile1, new Path("userProfilePC"));
-        userProfile1.setMapperClass(UserProfile.UserProfileWeightMapper.class);
-        userProfile1.setReducerClass(UserProfile.UserProfileWeightReducer.class);
-        userProfile1.setMapOutputKeyClass(ProfileFeatureWritable.class);
-        userProfile1.setMapOutputValueClass(AverageWritable.class);
-        userProfile1.setOutputKeyClass(ProfileFeatureWritable.class);
-        userProfile1.setOutputValueClass(DoubleWritable.class);
-        userProfile1.waitForCompletion(true);
+
+        // User Artist Counter
+        Job userArtistCounter = createNewJob("user artist cnt", UserArtistCount.class, INPUT.foldername(), UA_CT.foldername(),
+                UserArtistCount.ArtistCountsPerUserMapper.class, UserArtistCount.ArtistCountsPerUserReducer.class, IntWritable.class, IntWritable.class,
+                IntWritable.class, IntWritable.class);
+        userArtistCounter.submit();
+
         // Item Profile
-        Job itemProfile = Job.getInstance( conf, "item profile");
-        itemProfile.setJarByClass(ItemProfile.class);
-        LastfmFileInputFormat.addInputPath(itemProfile, new Path("input"));
-        itemProfile.setInputFormatClass(LastfmFileInputFormat.class);
-        FileOutputFormat.setOutputPath(itemProfile, new Path("itemProfile"));
-        itemProfile.setMapperClass(ItemProfile.ItemProfileMapper.class);
-        itemProfile.setReducerClass(ItemProfile.ItemProfileReducer.class);
-        itemProfile.setMapOutputKeyClass(ProfileIdWritable.class);
-        itemProfile.setMapOutputValueClass(IntWritable.class);
-        itemProfile.setOutputKeyClass(ProfileFeatureWritable.class);
-        itemProfile.setOutputValueClass(DoubleWritable.class);
-        success = itemProfile.waitForCompletion( true);
-        // User Profile Join
-        Job userArtistJoin = Job.getInstance( conf, "user profile join");
-        userArtistJoin.setJarByClass(UserProfile.class);
-        LastfmFileInputFormat.addInputPath(userArtistJoin, new Path("itemProfile"));
-        LastfmFileInputFormat.addInputPath(userArtistJoin, new Path("input"));
-        userArtistJoin.setInputFormatClass(LastfmFileInputFormat.class);
-        FileOutputFormat.setOutputPath(userArtistJoin, new Path("userProfJoin"));
-        userArtistJoin.setMapperClass(UserProfile.UserProfileRelationJoinMapper.class);
-        userArtistJoin.setReducerClass(UserProfile.UserProfileRelationJoinReducer.class);
-        userArtistJoin.setPartitionerClass(TaggedJoiningPartitioner.class);
-        userArtistJoin.setGroupingComparatorClass(TaggedJoiningGroupingComparator.class);
-        userArtistJoin.setMapOutputKeyClass(JoinByArtistKey.class);
-        userArtistJoin.setMapOutputValueClass(UserProfileRelationJoinWritable.class);
-        userArtistJoin.setOutputKeyClass(ProfileFeatureWritable.class);
-        userArtistJoin.setOutputValueClass(DoubleWritable.class);
-        success = success && userArtistJoin.waitForCompletion( true);
-        // User Profile Aggregate
-        Job userProfileAgg = Job.getInstance(conf, "user profile agg");
-        userProfileAgg.setJarByClass(UserProfile.class);
-        LastfmFileInputFormat.addInputPath(userProfileAgg, new Path("userProfJoin"));
-        userProfileAgg.setInputFormatClass(LastfmFileInputFormat.class);
-        FileOutputFormat.setOutputPath(userProfileAgg, new Path("userProfile"));
-        userProfileAgg.setMapperClass(UserProfile.UserProfileTagWeightAveragingMapper.class);
-        userProfileAgg.setReducerClass(UserProfile.UserProfileTagWeightAveragingReducer.class);
-        userProfileAgg.setMapOutputKeyClass(ProfileFeatureWritable.class);
-        userProfileAgg.setMapOutputValueClass(AverageWritable.class);
-        userProfileAgg.setOutputKeyClass(ProfileFeatureWritable.class);
-        userProfileAgg.setOutputValueClass(DoubleWritable.class);
-        success = success && userProfileAgg.waitForCompletion( true);
-        success = success && itemProfile1.waitForCompletion(true) && userProfile1.waitForCompletion(true);
+        Job itemProfileGeneration = createNewJob("item profile", ItemProfile.class, INPUT.foldername(), IP_TW.foldername(),
+                ItemProfile.ItemProfileMapper.class, ItemProfile.ItemProfileReducer.class, ProfileIdWritable.class, IntWritable.class,
+                ProfileFeatureWritable.class, DoubleWritable.class);
+        success = itemProfileGeneration.waitForCompletion( true);
+
+        // User Artists Join Item Profile on Artist ID
+        Job userArtistItemProfileJoin = createNewJob("user artist item prof join", UserProfile.class, new String[] {IP_TW.foldername(), INPUT.foldername()}, UP_JN.foldername(),
+                UserProfile.UserProfileRelationJoinMapper.class, UserProfile.UserProfileRelationJoinReducer.class, RelationalJoinKey.class, UserProfileRelationJoinWritable.class,
+                ProfileFeatureWritable.class, DoubleWritable.class);
+        userArtistItemProfileJoin.setPartitionerClass(TaggedJoiningPartitioner.class);
+        userArtistItemProfileJoin.setGroupingComparatorClass(TaggedJoiningGroupingComparator.class);
+        success = success && userArtistItemProfileJoin.waitForCompletion( true);
+
+        // User Profile Tag Score Aggregator
+        Job userProfileTagScoreAggregator = createNewJob("user profile tag wt agg", UserProfile.class, UP_JN.foldername(), UP_NN.foldername(),
+                UserProfile.UserProfileTagWeightAggregatorMapper.class, UserProfile.UserProfileTagWeightAggregatorReducer.class, ProfileFeatureWritable.class, DoubleWritable.class,
+                ProfileFeatureWritable.class, DoubleWritable.class);
+        success = success && userProfileTagScoreAggregator.waitForCompletion( true);
+        success = success && userArtistCounter.waitForCompletion(true);
+
+        // User Profile Tag Score Normalizer
+        Job userProfile = createNewJob("user profile", UserProfile.class, new String[] {UP_NN.foldername(), UA_CT.foldername()}, UP_TW.foldername(),
+                UserProfile.UserProfileTagWeightNormalizedMapper.class, UserProfile.UserProfileTagWeightNormalizedReducer.class, RelationalJoinKey.class, UserProfileRelationJoinWritable.class,
+                ProfileFeatureWritable.class, DoubleWritable.class);
+        userProfile.setPartitionerClass(TaggedJoiningPartitioner.class);
+        userProfile.setGroupingComparatorClass(TaggedJoiningGroupingComparator.class);
+        success = success && userProfile.waitForCompletion(true);
+
+        // Create Inverted Index
+        Job invertedIndex = createNewJob("inverted index", CosineSimilarity.class, new String[] {IP_TW.foldername(),  UP_TW.foldername()}, INDEX.foldername(),
+                CosineSimilarity.InvertedIndexMapper.class, CosineSimilarity.InvertedIndexReducer.class, InvertedIndexKeyWritable.class, InvertedIndexValueWritable.class,
+                InvertedIndexKeyWritable.class, InvertedIndexVectorWritable.class);
+        success = success && invertedIndex.waitForCompletion(true);
+
+        // Do Cosine Similarity
+        Job cosineSimilarity = createJobUsingInvertedIndexFIF("cosine similarity", CosineSimilarity.class, new String[] {INDEX.foldername()}, COSSIM.foldername(),
+                CosineSimilarity.CosineMapper.class, CosineSimilarity.CosineReducer.class, KeyPair.class, ValuePair.class,
+                KeyPair.class, Double.class);
+        success = success && cosineSimilarity.waitForCompletion(true);
+
         // End Process
         System.exit(success ? 0 : 1);
     }
-
 }

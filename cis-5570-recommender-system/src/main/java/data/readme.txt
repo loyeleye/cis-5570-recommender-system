@@ -39,7 +39,7 @@ Data statistics
             
    11946 tags  
    
-  186479 filenameSource assignments (tas), i.e. tuples [user, filenameSource, artist]
+  186479 relationalTable assignments (tas), i.e. tuples [user, relationalTable, artist]
          avg. 98.562 tas per user
          avg. 14.891 tas per artist
          avg. 18.930 distinct tags used by each user
@@ -65,9 +65,9 @@ Files
 
    * user_taggedartists.dat - user_taggedartists-timestamps.dat
    
-        These files contain the filenameSource assignments of artists provided by each particular user.
+        These files contain the relationalTable assignments of artists provided by each particular user.
         
-        They also contain the timestamps when the filenameSource assignments were done.
+        They also contain the timestamps when the relationalTable assignments were done.
    
    * user_friends.dat
    

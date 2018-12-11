@@ -1,5 +1,6 @@
 package recommender.fileformat;
 
+import com.amazonaws.services.kinesis.model.Record;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
@@ -130,8 +131,11 @@ public class LastfmRecordReader extends RecordReader<Text, RecordWritable> {
 			record = RecordWritable.readItemProfile(nextReadLineValues, parentFolder);
 		} else if ("userProfJoin".equalsIgnoreCase(parentFolder.toString())
 				|| "userProfile".equalsIgnoreCase(parentFolder.toString())
-				|| "userProfilePC".equalsIgnoreCase(parentFolder.toString())) {
+				|| "userProfilePC".equalsIgnoreCase(parentFolder.toString())
+				|| "userProfNonNorm".equalsIgnoreCase(parentFolder.toString())) {
 			record = RecordWritable.readUserProfile(nextReadLineValues, parentFolder);
+		} else if ("userArtistCount".equalsIgnoreCase(parentFolder.toString())) {
+			record = RecordWritable.readUserArtistCount(nextReadLineValues, parentFolder);
 		} else {
 			record = RecordWritable.readOther(nextReadLineValues, parentFolder);
 		}

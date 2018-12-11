@@ -60,19 +60,21 @@ public class ItemProfile {
         public void reduce( ProfileIdWritable key, Iterable < IntWritable > values, Context context
         ) throws IOException,
                 InterruptedException {
-            double totalCount = 0;
-            HashMap<Integer, Integer> tagCounts = new HashMap<>();
+            double norm = 0;
+            HashMap<Integer, Double> tagCounts = new HashMap<>();
             for (IntWritable tag: values) {
                 int tagId = tag.get();
                 tagCounts.put(tagId, tagCounts.containsKey(tagId) ? tagCounts.get(tagId) + 1 : 1);
-                totalCount+=1;
+                norm+=1.0;
             }
+
+            norm = Math.sqrt(norm);
 
             profileAndTag.setProfileId(key);
 
             for (int tagId: tagCounts.keySet()) {
                 profileAndTag.setTagAsFeature(new IntWritable(tagId));
-                artistTagScore.set(tagCounts.get(tagId) / totalCount);
+                artistTagScore.set(tagCounts.get(tagId) / norm);
                 context.write(profileAndTag, artistTagScore);
             }
         }
@@ -91,7 +93,7 @@ public class ItemProfile {
                 totalCnt+=1;
             }
             profileAndWeight.setProfileId(key);
-            profileAndWeight.setFeature("playcount");
+            profileAndWeight.setTagAsFeature(new IntWritable(0));
             averagePlaycount.set(sum / totalCnt);
             context.write(profileAndWeight, averagePlaycount);
         }
