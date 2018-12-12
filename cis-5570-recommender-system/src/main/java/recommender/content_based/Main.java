@@ -34,7 +34,11 @@ import static recommender.enums.FileFolders.*;
 
 public class Main {
     static final Double SIMILARITY_THRESHOLD = 0.6;
-    static Integer N = 10;
+    static final int NUM_USER_ARTIST_RECORDS = 92835 - 1;
+    static final float FALSE_POSITIVE_RATE = 0.0005f;
+
+    static Integer NUM_RECOMMENDATIONS = 10;
+    static Boolean DESCRIPTIVE = false;
 
     private static Job createNewJob(String jobName, Class jobClass, String[] ins, String out, Class<? extends Mapper> mapperClass, Class<? extends Reducer> reducerClass,
                             Class mapKeyOut, Class mapValueOut, Class reduceKeyOut, Class reduceValueOut) throws IOException {
@@ -80,7 +84,8 @@ public class Main {
     }
 
     public static void main( String[] args) throws Exception {
-        N = (args.length == 0) ? 10 : Integer.parseInt(args[0]);
+        NUM_RECOMMENDATIONS = (args.length > 0) ? Integer.parseInt(args[0]) : 10;
+        DESCRIPTIVE = args.length > 1 && args[1].charAt(0) == 'D';
 
         boolean success;
 
