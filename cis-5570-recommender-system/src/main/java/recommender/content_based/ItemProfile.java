@@ -60,21 +60,23 @@ public class ItemProfile {
         public void reduce( ProfileIdWritable key, Iterable < IntWritable > values, Context context
         ) throws IOException,
                 InterruptedException {
-            double norm = 0;
+            double magnitude = 0;
             HashMap<Integer, Double> tagCounts = new HashMap<>();
             for (IntWritable tag: values) {
                 int tagId = tag.get();
                 tagCounts.put(tagId, tagCounts.containsKey(tagId) ? tagCounts.get(tagId) + 1 : 1);
-                norm+=1.0;
             }
-
-            norm = Math.sqrt(norm);
 
             profileAndTag.setProfileId(key);
 
+            for (double tagCount: tagCounts.values()) {
+                magnitude += Math.pow(tagCount, 2);
+            }
+            magnitude = Math.sqrt(magnitude);
+
             for (int tagId: tagCounts.keySet()) {
                 profileAndTag.setTagAsFeature(new IntWritable(tagId));
-                artistTagScore.set(tagCounts.get(tagId) / norm);
+                artistTagScore.set(tagCounts.get(tagId) / magnitude);
                 context.write(profileAndTag, artistTagScore);
             }
         }

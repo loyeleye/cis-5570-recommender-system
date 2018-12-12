@@ -11,7 +11,8 @@ public enum FileFolders {
     UA_CT("userArtistCount"),
     INDEX("invertedIndex"),
     VEC_PR("vectorProfile"),
-    COSSIM("cosineSimilarity");
+    COSSIM("cosineSimilarity"),
+    OUTPUT("output");
 
     private final String foldername;
 

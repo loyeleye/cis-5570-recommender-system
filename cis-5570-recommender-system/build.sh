@@ -2,7 +2,7 @@
 
 case "$1" in
         clean)
-            rm -rf itemProfile/ userProfile/ userProfJoin/ itemProfilePC/ userProfilePC/ cosineSimilarity/ invertedIndex/ userProfNonNorm/ userArtistCount/
+            rm -rf itemProfile/ userProfile/ userProfJoin/ itemProfilePC/ userProfilePC/ cosineSimilarity/ invertedIndex/ userProfNonNorm/ userArtistCount/ output/ bloomFilter/
             mvn clean
             ;;
 

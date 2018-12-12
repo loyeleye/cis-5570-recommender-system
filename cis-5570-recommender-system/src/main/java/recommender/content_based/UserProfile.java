@@ -166,7 +166,7 @@ class UserProfile {
             }
 
             profileAndWeight.setFeature("playcount");
-            context.write(profileAndWeight, new DoubleWritable(average.getAverage() * Main.PLAYCOUNT_ALPHA));
+            context.write(profileAndWeight, new DoubleWritable(average.getAverage()));
         }
     }
 
@@ -233,15 +233,15 @@ class UserProfile {
                 up.getValue().set(tagWeight / artistCount);
             }
 
-            double norm = 0;
+            double magnitude = 0;
             for (UserProfileRelationJoinWritable up : userProfile) {
-                norm += Math.pow(up.getValue().get(), 2);
+                magnitude += Math.pow(up.getValue().get(), 2);
             }
-            norm = Math.sqrt(norm);
+            magnitude = Math.sqrt(magnitude);
 
             for (UserProfileRelationJoinWritable up : userProfile) {
                 profileAndTag.setTagAsFeature(up.getTagId());
-                normalizedTagWeight.set(up.getValue().get() / norm);
+                normalizedTagWeight.set(up.getValue().get() / magnitude);
                 context.write(profileAndTag, normalizedTagWeight);
             }
         }

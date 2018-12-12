@@ -5,29 +5,23 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
-import recommender.deprecated.NamedDoubleWritable;
-import recommender.deprecated.ProfileVectorWritable;
-import recommender.hadoopext.io.ProfileIdWritable;
-import recommender.hadoopext.io.inverted_index.InvertedIndexValueWritable;
-import recommender.hadoopext.io.inverted_index.InvertedIndexVectorWritable;
+import recommender.hadoopext.io.RecordWritable;
+import recommender.hadoopext.io.cosine.KeyPair;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.List;
 
-public class VectorRecordReader extends RecordReader<ProfileIdWritable, ProfileVectorWritable> {
-	private ProfileIdWritable key = new ProfileIdWritable();
-	private ProfileVectorWritable value;
+public class CosineOutputRecordReader extends RecordReader<KeyPair, RecordWritable> {
+	private KeyPair key = new KeyPair();
 
 	private Text parentFolder = new Text();
+	private RecordWritable value;
 	private BufferedReader in;
 	private long start = 0;
 	private long end = 0;
@@ -62,7 +56,7 @@ public class VectorRecordReader extends RecordReader<ProfileIdWritable, ProfileV
 	 * @throws InterruptedException
 	 */
 	@Override
-	public ProfileIdWritable getCurrentKey() throws IOException, InterruptedException {
+	public KeyPair getCurrentKey() throws IOException, InterruptedException {
 		return key;
 	}
 
@@ -73,7 +67,7 @@ public class VectorRecordReader extends RecordReader<ProfileIdWritable, ProfileV
 	 * @throws InterruptedException
 	 */
 	@Override
-	public ProfileVectorWritable getCurrentValue() throws IOException, InterruptedException {
+	public RecordWritable getCurrentValue() throws IOException, InterruptedException {
 		return value;
 	}
 
@@ -100,20 +94,10 @@ public class VectorRecordReader extends RecordReader<ProfileIdWritable, ProfileV
 
 		// Split values to an array
 		String[] keyAndValue = StringUtils.split(nextReadLine, '\t');
+		String[] keys = StringUtils.split(keyAndValue[0], ',');
+		key.parse(keys[0], keys[1]);
 
-		String[] k = StringUtils.split(keyAndValue[0], '-');
-		key.setType(k[0].charAt(0)=='u');
-		key.setId(Integer.parseInt(k[1]));
-
-		List<NamedDoubleWritable> features = new ArrayList<>();
-
-		for (String namedFeature: StringUtils.split(keyAndValue[1])) {
-			String[] featureAndValue = StringUtils.split(namedFeature, ':');
-			NamedDoubleWritable n = new NamedDoubleWritable(featureAndValue[0], Double.parseDouble(featureAndValue[1]));
-			features.add(n);
-		}
-
-		value = new ProfileVectorWritable(features.toArray(new NamedDoubleWritable[]{}));
+		value = RecordWritable.readCosineSimilarity(key, keyAndValue[1], parentFolder);
 
 		return true;
 	}

@@ -4,13 +4,15 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import recommender.fileformat.CosineOutputFileInputFormat;
 import recommender.fileformat.InvertedIndexFileInputFormat;
 import recommender.fileformat.LastfmFileInputFormat;
-import recommender.hadoopext.io.AverageWritable;
 import recommender.hadoopext.io.ProfileFeatureWritable;
 import recommender.hadoopext.io.ProfileIdWritable;
 import recommender.hadoopext.io.cosine.KeyPair;
@@ -18,6 +20,7 @@ import recommender.hadoopext.io.cosine.ValuePair;
 import recommender.hadoopext.io.inverted_index.InvertedIndexKeyWritable;
 import recommender.hadoopext.io.inverted_index.InvertedIndexValueWritable;
 import recommender.hadoopext.io.inverted_index.InvertedIndexVectorWritable;
+import recommender.hadoopext.io.recommendation.KeyPairSecondarySort;
 import recommender.hadoopext.io.relational_join.RelationalJoinKey;
 import recommender.hadoopext.io.relational_join.TaggedJoiningGroupingComparator;
 import recommender.hadoopext.io.relational_join.TaggedJoiningPartitioner;
@@ -28,7 +31,8 @@ import java.io.IOException;
 import static recommender.enums.FileFolders.*;
 
 public class Main {
-    static final Double SIMILARITY_THRESHOLD = 0.8;
+    static final Double SIMILARITY_THRESHOLD = 0.6;
+    static Integer N = 10;
 
     private static Job createNewJob(String jobName, Class jobClass, String[] ins, String out, Class<? extends Mapper> mapperClass, Class<? extends Reducer> reducerClass,
                             Class mapKeyOut, Class mapValueOut, Class reduceKeyOut, Class reduceValueOut) throws IOException {
@@ -54,15 +58,15 @@ public class Main {
         return createNewJob(jobName, jobClass, new String[]{in}, out, mapperClass, reducerClass, mapKeyOut, mapValueOut, reduceKeyOut, reduceValueOut);
     }
 
-    private static Job createJobUsingInvertedIndexFIF(String jobName, Class jobClass, String[] ins, String out, Class<? extends Mapper> mapperClass, Class<? extends Reducer> reducerClass,
-                                    Class mapKeyOut, Class mapValueOut, Class reduceKeyOut, Class reduceValueOut) throws IOException {
+    private static Job createJobUsingCustomFIF(String jobName, Class jobClass, String[] ins, String out, Class<? extends Mapper> mapperClass, Class<? extends Reducer> reducerClass,
+                                               Class mapKeyOut, Class mapValueOut, Class reduceKeyOut, Class reduceValueOut, FileInputFormat fif) throws IOException {
         Configuration conf = new Configuration();
         Job newJob = Job.getInstance(conf, jobName);
         newJob.setJarByClass(jobClass);
         for (String in: ins) {
-            InvertedIndexFileInputFormat.addInputPath(newJob, new Path(in));
+            fif.addInputPath(newJob, new Path(in));
         }
-        newJob.setInputFormatClass(InvertedIndexFileInputFormat.class);
+        newJob.setInputFormatClass(fif.getClass());
         FileOutputFormat.setOutputPath(newJob, new Path(out));
         newJob.setMapperClass(mapperClass);
         newJob.setReducerClass(reducerClass);
@@ -74,6 +78,8 @@ public class Main {
     }
 
     public static void main( String[] args) throws Exception {
+        N = (args.length == 0) ? 10 : Integer.parseInt(args[0]);
+
         boolean success;
 
         // User Artist Counter
@@ -118,9 +124,17 @@ public class Main {
         success = success && invertedIndex.waitForCompletion(true);
 
         // Do Cosine Similarity
-        Job cosineSimilarity = createJobUsingInvertedIndexFIF("cosine similarity", CosineSimilarity.class, new String[] {INDEX.foldername()}, COSSIM.foldername(),
+        Job cosineSimilarity = createJobUsingCustomFIF("cosine similarity", CosineSimilarity.class, new String[] {INDEX.foldername()}, COSSIM.foldername(),
                 CosineSimilarity.CosineMapper.class, CosineSimilarity.CosineReducer.class, KeyPair.class, ValuePair.class,
-                KeyPair.class, Double.class);
+                KeyPair.class, DoubleWritable.class, new InvertedIndexFileInputFormat());
+        success = success && cosineSimilarity.waitForCompletion(true);
+
+        RecommendationSorting.loadBloomFilter();
+
+        // Get Sorted Recommendations
+        Job getTopNRecommendations = createJobUsingCustomFIF("top n recommends", RecommendationSorting.class, new String[] {COSSIM.foldername()}, OUTPUT.foldername(),
+                RecommendationSorting.TopNMapper.class, RecommendationSorting.TopNReducer.class, KeyPairSecondarySort.class, DoubleWritable.class,
+                Text.class, DoubleWritable.class, new CosineOutputFileInputFormat());
         success = success && cosineSimilarity.waitForCompletion(true);
 
         // End Process

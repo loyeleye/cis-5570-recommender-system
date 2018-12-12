@@ -1,9 +1,10 @@
-package recommender.fileformat;
+package recommender.deprecated;
 
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import recommender.fileformat.InvertedIndexRecordReader;
 
 import java.io.IOException;
 

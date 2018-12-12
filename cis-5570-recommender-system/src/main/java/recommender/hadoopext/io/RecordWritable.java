@@ -2,7 +2,7 @@ package recommender.hadoopext.io;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.io.*;
-import recommender.deprecated.Feature;
+import recommender.hadoopext.io.cosine.KeyPair;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -106,6 +106,16 @@ public class RecordWritable implements Writable {
 
     public static RecordWritable readUserProfile(String[] record, Text pf) {
         return readProfile(record, pf, true);
+    }
+
+    public static RecordWritable readCosineSimilarity(KeyPair kp, String value, Text pf) {
+        RecordWritable r = new RecordWritable();
+        r.artistId = new IntWritable(kp.getArtistId());
+        r.userId = new IntWritable(kp.getUserId());
+        r.score = new DoubleWritable(Double.valueOf(value));
+        r.parentFolder = pf;
+
+        return r;
     }
 
     public static RecordWritable readOther(String[] record, Text pf) {

@@ -13,6 +13,14 @@ public class KeyPair implements Writable, WritableComparable<KeyPair> {
     private Integer userId = null;
     private Integer artistId = null;
 
+    public void setUserId(Integer userId) {
+        this.userId = userId;
+    }
+
+    public void setArtistId(Integer artistId) {
+        this.artistId = artistId;
+    }
+
     public void parse(String doc1, String doc2) {
         if (doc1.charAt(0) == 'u') {
             parseUserId(doc1);
