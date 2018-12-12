@@ -39,7 +39,7 @@ class RecommendationSorting {
                     BufferedReader br = new BufferedReader(in);
                     String line;
                     while ((line = br.readLine()) != null) {
-                        bloomFilter = new BloomFilter(10000, 3, 1);
+                        bloomFilter = new BloomFilter(5000000, 50, 1);
                         String[] userArtistWeight = line.split("\t");
                         String ua_pair = String.format("u%s,a%s", userArtistWeight[0], userArtistWeight[1]);
                         bloomFilter.add(new Key(ua_pair.getBytes()));
