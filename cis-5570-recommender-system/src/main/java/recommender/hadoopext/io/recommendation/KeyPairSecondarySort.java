@@ -72,9 +72,6 @@ public class KeyPairSecondarySort implements Writable, WritableComparable<KeyPai
         if(cmp==0){
             cmp = this.score.compareTo(o.score) * -1;
         }
-        if(cmp==0){
-            cmp = this.keyPair.getArtistId().compareTo(o.keyPair.getArtistId());
-        }
         return cmp;
     }
 

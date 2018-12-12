@@ -12,6 +12,7 @@ public enum FileFolders {
     INDEX("invertedIndex"),
     VEC_PR("vectorProfile"),
     COSSIM("cosineSimilarity"),
+    BLOOM("bloomFilter"),
     OUTPUT("output");
 
     private final String foldername;

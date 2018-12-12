@@ -21,6 +21,8 @@ import recommender.hadoopext.io.inverted_index.InvertedIndexKeyWritable;
 import recommender.hadoopext.io.inverted_index.InvertedIndexValueWritable;
 import recommender.hadoopext.io.inverted_index.InvertedIndexVectorWritable;
 import recommender.hadoopext.io.recommendation.KeyPairSecondarySort;
+import recommender.hadoopext.io.recommendation.RecommendationSortingGroupingComparator;
+import recommender.hadoopext.io.recommendation.RecommendationSortingPartitioner;
 import recommender.hadoopext.io.relational_join.RelationalJoinKey;
 import recommender.hadoopext.io.relational_join.TaggedJoiningGroupingComparator;
 import recommender.hadoopext.io.relational_join.TaggedJoiningPartitioner;
@@ -129,13 +131,13 @@ public class Main {
                 KeyPair.class, DoubleWritable.class, new InvertedIndexFileInputFormat());
         success = success && cosineSimilarity.waitForCompletion(true);
 
-        RecommendationSorting.loadBloomFilter();
-
         // Get Sorted Recommendations
         Job getTopNRecommendations = createJobUsingCustomFIF("top n recommends", RecommendationSorting.class, new String[] {COSSIM.foldername()}, OUTPUT.foldername(),
                 RecommendationSorting.TopNMapper.class, RecommendationSorting.TopNReducer.class, KeyPairSecondarySort.class, DoubleWritable.class,
                 Text.class, DoubleWritable.class, new CosineOutputFileInputFormat());
-        success = success && cosineSimilarity.waitForCompletion(true);
+        getTopNRecommendations.setPartitionerClass(RecommendationSortingPartitioner.class);
+        getTopNRecommendations.setGroupingComparatorClass(RecommendationSortingGroupingComparator.class);
+        success = success && getTopNRecommendations.waitForCompletion(true);
 
         // End Process
         System.exit(success ? 0 : 1);
