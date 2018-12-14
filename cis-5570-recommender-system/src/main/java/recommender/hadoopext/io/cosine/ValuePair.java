@@ -1,15 +1,13 @@
 package recommender.hadoopext.io.cosine;
 
-import org.apache.hadoop.io.DoubleWritable;
-import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Writable;
-import parquet.it.unimi.dsi.fastutil.doubles.DoubleList;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class ValuePair implements Writable {
+public class
+ValuePair implements Writable {
     private Double v1;
     private Double v2;
 

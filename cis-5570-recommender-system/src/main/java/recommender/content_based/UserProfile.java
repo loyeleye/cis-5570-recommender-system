@@ -86,16 +86,16 @@ class UserProfile {
                     firstFile.add(rjv);
                 } else {
                     if ("itemProfile".equalsIgnoreCase(value.getRelationTable().toString())) {
-                        userTagScore.set(value.getValue().get());
                         profileAndTag.setTagAsFeature(value.getTagId());
                         for (UserProfileRelationJoinWritable userArtist : firstFile) {
+                            userTagScore.set(value.getValue().get() * Math.log(userArtist.getValue().get()));
                             profileId.setId(userArtist.getUserId().get());
                             context.write(profileAndTag, userTagScore);
                         }
                     } else {
                         profileId.setId(value.getUserId().get());
                         for (UserProfileRelationJoinWritable itemProfile : firstFile) {
-                            userTagScore.set(itemProfile.getValue().get());
+                            userTagScore.set(itemProfile.getValue().get() * Math.log(value.getValue().get()));
                             profileAndTag.setTagAsFeature(itemProfile.getTagId());
                             context.write(profileAndTag, userTagScore);
                         }
