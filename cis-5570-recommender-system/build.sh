@@ -7,11 +7,15 @@ case "$1" in
             ;;
 
         build)
-            mvn clean compile assembly:single
+            mvn clean install
             ;;
 
         run)
-            java -jar target/cis-5570-recommender-system-1.0-SNAPSHOT-jar-with-dependencies.jar
+            java -jar target/cis-5570-recommender-system.jar "$@:3"
+            ;;
+
+        demo)
+            java -jar target/cis-5570-recommender-system-demo.jar
             ;;
         *)
             echo $"Usage: $0 { clean | build | run }"
