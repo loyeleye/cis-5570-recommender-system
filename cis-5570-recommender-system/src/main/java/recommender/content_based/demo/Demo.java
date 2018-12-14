@@ -1,34 +1,27 @@
 package recommender.content_based.demo;
 
 import org.apache.commons.lang.StringUtils;
-import recommender.content_based.Main;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.Buffer;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Paths;
 import java.util.*;
 
 public class Demo {
-    private static boolean VERBOSE = true;
+    private static boolean VERBOSE = false;
 
-    public static void main( String[] args) throws Exception {
-        if (args.length == 0 || !args[0].equalsIgnoreCase("-norec")) {
-            //Main.main(args);
-
-            System.out.println("Finished generating recommendations.");
-            bigPause();
-        }
-
+    public static void main(String[] args) throws Exception {
         boolean analyzing = true;
-
 
         while (analyzing) {
             analyzeUser();
-            analyzing = userConfirm("Would you like to explore more recommendations?");
-            if (analyzing) VERBOSE = !userConfirm("Turn verbose mode off?");
+            analyzing = userConfirm("Would you like to see more recommendations?");
+            if (analyzing) VERBOSE = userConfirm("Turn verbose mode on?");
         }
 
         System.out.println("Thanks for checking out our demo. Press any key to exit.");
@@ -36,14 +29,30 @@ public class Demo {
     }
 
     private static void analyzeUser() throws IOException {
-        System.out.println("Enter User ID to analyze: ");
         List<OldArtistInfo> oldArtistInfos = new ArrayList<>();
         List<RecArtistInfo> recArtistInfos = new ArrayList<>();
         BufferedReader input = new BufferedReader(new InputStreamReader(System.in));
-        String in = input.readLine();
-        int userId = Integer.parseInt(in);
-        String filename = "output/recommendations/"+userId+"-r-00000";
-        BufferedReader recs = Files.newBufferedReader(Paths.get(filename), Charset.defaultCharset());
+        boolean validUser = false;
+        String filename = "";
+        String in = "";
+        int userId = 0;
+        BufferedReader recs;
+
+        try {
+            System.out.println("Enter User ID to analyze: ");
+            in = input.readLine();
+            userId = Integer.parseInt(in);
+            filename = "output/recommendations/" + userId + "-r-00000";
+            recs = Files.newBufferedReader(Paths.get(filename), Charset.defaultCharset());
+            validUser = true;
+        } catch (NoSuchFileException e) {
+            System.out.printf("Recommendation file does not exist for User ID %d\n", userId);
+            return;
+        } catch (NumberFormatException e) {
+            System.out.printf("Not a valid User ID: %s\n", in);
+            return;
+        }
+
         if (VERBOSE) System.out.println("Opened " + filename + "...");
         if (VERBOSE) System.out.println("Reading recommendations: ");
         String line;
@@ -89,14 +98,14 @@ public class Demo {
 
         BufferedReader itemProfReader = openReader("itemProfile/part-r-00000");
         while ((line = itemProfReader.readLine()) != null) {
-            for (RecArtistInfo artist: recArtistInfos) {
+            for (RecArtistInfo artist : recArtistInfos) {
                 String artistId = artist.id;
                 if (StringUtils.contains(line, "artist-" + artistId + ",")) {
                     if (VERBOSE) System.out.println(line);
                     artist.initTag(line);
                 }
             }
-            for (OldArtistInfo artist: oldArtistInfos) {
+            for (OldArtistInfo artist : oldArtistInfos) {
                 String artistId = artist.id;
                 if (StringUtils.contains(line, "artist-" + artistId + ",")) {
                     if (VERBOSE) System.out.println(line);
@@ -107,8 +116,8 @@ public class Demo {
         itemProfReader.close();
 
         System.out.println("Calculating tag contributions...");
-        for (RecArtistInfo recArtistInfo: recArtistInfos) {
-            for (TagInfo tagInfo: recArtistInfo.tags) {
+        for (RecArtistInfo recArtistInfo : recArtistInfos) {
+            for (TagInfo tagInfo : recArtistInfo.tags) {
                 tagInfo.contribution = tagInfo.score * getOrDefault(userProfileTags, tagInfo.tag, 0d) / recArtistInfo.recommendationScore;
             }
         }
@@ -116,16 +125,16 @@ public class Demo {
         System.out.println("Reading user tags...");
         BufferedReader tagReader = openReader("data/tags.dat");
         while ((line = tagReader.readLine()) != null) {
-            for (RecArtistInfo artist: recArtistInfos) {
-                for (TagInfo tag: artist.tags) {
+            for (RecArtistInfo artist : recArtistInfos) {
+                for (TagInfo tag : artist.tags) {
                     if (StringUtils.startsWith(line, tag.tag + "\t")) {
                         if (VERBOSE) System.out.println(line);
                         tag.setName(line);
                     }
                 }
             }
-            for (OldArtistInfo artist: oldArtistInfos) {
-                for (TagInfo tag: artist.tags) {
+            for (OldArtistInfo artist : oldArtistInfos) {
+                for (TagInfo tag : artist.tags) {
                     if (StringUtils.startsWith(line, tag.tag + "\t")) {
                         if (VERBOSE) System.out.println(line);
                         tag.setName(line);
@@ -144,7 +153,7 @@ public class Demo {
         System.out.println(String.format("%d recommendations found for User %s", recArtistInfos.size(), user));
         pause();
 
-        for (RecArtistInfo recArtistInfo: recArtistInfos) {
+        for (RecArtistInfo recArtistInfo : recArtistInfos) {
             System.out.println(recArtistInfo.print());
             pause();
         }
@@ -155,20 +164,20 @@ public class Demo {
         char feedback = (char) System.in.read();
 
         if (feedback == 'y') {
-            for (OldArtistInfo oldArtistInfo: oldArtistInfos) {
+            for (OldArtistInfo oldArtistInfo : oldArtistInfos) {
                 System.out.println(oldArtistInfo.print());
                 pause();
             }
         } else if (feedback == '5') {
             int remaining = 5;
-            for (OldArtistInfo oldArtistInfo: oldArtistInfos) {
+            for (OldArtistInfo oldArtistInfo : oldArtistInfos) {
                 if (remaining-- <= 0) break;
                 System.out.println(oldArtistInfo.print());
                 pause();
             }
         }
 
-        System.out.printf("Finished analysis for User %s", user);
+        System.out.printf("Finished analysis for User %s...\n", user);
     }
 
     public static boolean userConfirm(String confirmMessage) throws IOException {
@@ -202,7 +211,7 @@ public class Demo {
         List<T> ret = new ArrayList<>();
         if (VERBOSE) System.out.println("Finding artists: ");
         while ((line = artistReader.readLine()) != null) {
-            for (ArtistInfo artistInfo: artistInfos) {
+            for (ArtistInfo artistInfo : artistInfos) {
                 String artistId = artistInfo.id;
                 if (StringUtils.startsWith(line, artistId + "\t")) {
                     if (VERBOSE) System.out.println(line);
@@ -218,7 +227,7 @@ public class Demo {
         return ret;
     }
 
-    private static <K, V> V getOrDefault(Map<K,V> map, K key, V defaultValue) {
+    private static <K, V> V getOrDefault(Map<K, V> map, K key, V defaultValue) {
         return map.containsKey(key) ? map.get(key) : defaultValue;
     }
 }

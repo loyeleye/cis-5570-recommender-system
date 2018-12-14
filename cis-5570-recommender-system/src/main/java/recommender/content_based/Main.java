@@ -38,7 +38,7 @@ public class Main {
     static final float FALSE_POSITIVE_RATE = 0.0005f;
 
     static Integer NUM_RECOMMENDATIONS = 10;
-    static Boolean DESCRIPTIVE = true;
+    static final Boolean DESCRIPTIVE = true;
 
     private static Job createNewJob(String jobName, Class jobClass, String[] ins, String out, Class<? extends Mapper> mapperClass, Class<? extends Reducer> reducerClass,
                             Class mapKeyOut, Class mapValueOut, Class reduceKeyOut, Class reduceValueOut) throws IOException {
@@ -84,8 +84,8 @@ public class Main {
     }
 
     public static void main( String[] args) throws Exception {
-        // NUM_RECOMMENDATIONS = (args.length > 0) ? Integer.parseInt(args[0]) : 10;
-        // DESCRIPTIVE = args.length > 1 && args[1].charAt(0) == 'D';
+        NUM_RECOMMENDATIONS = (args.length > 0) ? Integer.parseInt(args[0]) : 10;
+        System.out.printf("***# of Recommendations set to %d", NUM_RECOMMENDATIONS);
 
         boolean success;
 
