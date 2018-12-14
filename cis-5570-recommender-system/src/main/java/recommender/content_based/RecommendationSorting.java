@@ -78,7 +78,7 @@ class RecommendationSorting {
             for (int i = 0; i < Main.NUM_RECOMMENDATIONS; i++) {
                 if (!values.iterator().hasNext()) break;
                 score = values.iterator().next();
-                // userId artistId rank
+                // userId artist rank
                 Text machineOutput = new Text(String.format("%d\t%d\t%d", key.getUserId(), key.getArtistId(), i+1));
                 if (Main.DESCRIPTIVE) {
                     Text humanOutput = new Text(String.format("#%d) Recommend Artist %d to User %d >>> Recommendation Score:", i+1, key.getArtistId(), key.getUserId()));
