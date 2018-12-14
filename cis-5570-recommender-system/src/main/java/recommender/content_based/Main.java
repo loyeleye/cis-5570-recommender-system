@@ -85,7 +85,7 @@ public class Main {
 
     public static void main( String[] args) throws Exception {
         NUM_RECOMMENDATIONS = (args.length > 0) ? Integer.parseInt(args[0]) : 10;
-        System.out.printf("***# of Recommendations set to %d", NUM_RECOMMENDATIONS);
+        System.out.printf("***# of Recommendations set to %d\n", NUM_RECOMMENDATIONS);
 
         boolean success;
 

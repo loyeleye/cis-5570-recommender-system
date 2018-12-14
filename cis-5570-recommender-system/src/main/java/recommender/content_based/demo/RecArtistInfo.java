@@ -42,6 +42,6 @@ public class RecArtistInfo extends ArtistInfo implements Comparable<RecArtistInf
     }
 
     public String print(TagInfo tagInfo) {
-        return String.format("\t(%s) %s >>> Contribution to Recommendation: %f%%, Weight in Artist Profile: ", tagInfo.tag, tagInfo.tagName, tagInfo.contribution * 100, tagInfo.score);
+        return String.format("\t(%s) %s >>> Contribution to Recommendation: %f%%", tagInfo.tag, tagInfo.tagName, tagInfo.contribution * 100);
     }
 }

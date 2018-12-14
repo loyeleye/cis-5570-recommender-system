@@ -144,8 +144,7 @@ public class Demo {
         }
         tagReader.close();
 
-        System.out.println("Finished parsing files.");
-        bigPause();
+        System.out.println("Finished parsing files.\n\n");
 
         Collections.sort(recArtistInfos);
         Collections.sort(oldArtistInfos);
@@ -196,14 +195,6 @@ public class Demo {
         System.out.println("Press any key to continue...");
         System.in.read();
     }
-
-    private static void bigPause() throws IOException {
-        System.out.println(new String(new char[20]).replace("\0", "-"));
-        System.out.println(new String(new char[20]).replace("\0", "-"));
-        System.out.println(new String(new char[20]).replace("\0", "-"));
-        pause();
-    }
-
 
     private static <T extends ArtistInfo> List<T> findArtists(List<T> artistInfos) throws IOException {
         String line;
