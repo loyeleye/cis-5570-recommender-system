@@ -11,7 +11,8 @@ case "$1" in
             ;;
 
         run)
-            java -jar target/cis-5570-recommender-system.jar "$@:3"
+            num_recs=${2:-10}
+            java -jar target/cis-5570-recommender-system.jar "$num_recs"
             ;;
 
         demo)
